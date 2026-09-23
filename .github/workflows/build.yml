@@ -19,9 +19,11 @@ jobs:
 
       - name: Accept Android SDK licenses + install NDK
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "ndk;26.1.10909125"
-          yes | sdkmanager --licenses > /dev/null || true
+          SDKMGR="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMGR" ] || SDKMGR="$ANDROID_HOME/cmdline-tools/bin/sdkmanager"
+          yes | "$SDKMGR" --licenses > /dev/null || true
+          "$SDKMGR" "ndk;26.1.10909125"
+          yes | "$SDKMGR" --licenses > /dev/null || true
 
       - name: Build debug APK
         uses: gradle/actions/setup-gradle@v4
@@ -49,8 +51,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        run: yes | sdkmanager --licenses > /dev/null || true
+      - name: Accept Android SDK licenses
+        run: |
+          SDKMGR="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMGR" ] || SDKMGR="$ANDROID_HOME/cmdline-tools/bin/sdkmanager"
+          yes | "$SDKMGR" --licenses > /dev/null || true
 
       - name: Build companion debug APK
         run: |
