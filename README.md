@@ -3,6 +3,8 @@
 
 # WearMouse
 
+A fork of [ginkage/wearmouse](https://github.com/ginkage/wearmouse), adapted to control a computer, tablet or Android phone from a Wear OS watch.
+
 This project is a sample for the new Bluetooth HID Device API, which was
 introduced in Android P. It implements a simple air mouse and cursor keys
 emulation on a Wear OS device.
