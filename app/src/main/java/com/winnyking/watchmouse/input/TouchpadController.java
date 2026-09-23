@@ -51,7 +51,7 @@ public class TouchpadController {
                 @Override
                 @MainThread
                 public void onConnectionStateChanged(BluetoothDevice device, int state) {
-                    if (state == BluetoothProfile.STATE_DISCONNECTED) {
+                    if (state == BluetoothProfile.STATE_DISCONNECTED && !sendRouter.isNetworkMode()) {
                         ui.onDeviceDisconnected();
                     }
                 }
@@ -59,7 +59,7 @@ public class TouchpadController {
                 @Override
                 @MainThread
                 public void onAppStatusChanged(boolean registered) {
-                    if (!registered) {
+                    if (!registered && !sendRouter.isNetworkMode()) {
                         ui.onDeviceDisconnected();
                     }
                 }
@@ -69,8 +69,15 @@ public class TouchpadController {
                 public void onServiceStateChanged(BluetoothProfile proxy) {}
             };
 
+    private final SendRouter.StatusListener transportStatus =
+            () -> {
+                if (sendRouter.isNetworkMode()) {
+                    ui.onDeviceDisconnected();
+                }
+            };
+
     private final Ui ui;
-    private final HidDataSender hidDataSender;
+    private final SendRouter sendRouter;
     private final List<ButtonEvent> pendingEvents = new ArrayList<>();
 
     private float dX;
@@ -85,7 +92,7 @@ public class TouchpadController {
     /** @param ui Callback for receiving the UI updates. */
     public TouchpadController(Ui ui) {
         this.ui = checkNotNull(ui);
-        this.hidDataSender = HidDataSender.getInstance();
+        this.sendRouter = SendRouter.getInstance();
     }
 
     /**
@@ -96,7 +103,8 @@ public class TouchpadController {
      *     constructor.
      */
     public TouchpadGestureDetector.GestureListener onCreate(Context context) {
-        hidDataSender.register(context, profileListener);
+        HidDataSender.getInstance().register(context, profileListener);
+        sendRouter.registerStatusListener(transportStatus);
 
         if (scheduledFuture == null) {
             boolean reducedRate = new SettingsUtil(context).getBoolean(SettingKey.REDUCED_RATE);
@@ -122,7 +130,8 @@ public class TouchpadController {
             scheduledFuture = null;
         }
 
-        hidDataSender.unregister(context, profileListener);
+        sendRouter.unregisterStatusListener(transportStatus);
+        HidDataSender.getInstance().unregister(context, profileListener);
     }
 
     /**
@@ -202,6 +211,6 @@ public class TouchpadController {
             }
         }
 
-        hidDataSender.sendMouse(leftButton, rightButton, false, x, y, wheel);
+        sendRouter.sendMouse(leftButton, rightButton, false, x, y, wheel);
     }
 }

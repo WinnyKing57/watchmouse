@@ -1,0 +1,159 @@
+package com.winnyking.watchmousecompanion;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.TextUtils;
+import android.util.DisplayMetrics;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Locale;
+
+/**
+ * Companion app for a phone or tablet that receives the watch input over TCP/Wi-Fi and turns it
+ * into touch gestures. The watch controls this device like a touchscreen.
+ */
+public class MainActivity extends AppCompatActivity {
+
+    private static final int DEFAULT_PORT = 8888;
+
+    private final Handler mainThread = new Handler(Looper.getMainLooper());
+
+    private TcpInputServer server;
+    private TextView statusText;
+    private TextView addressText;
+    private TextView accessibilityText;
+    private Button toggleButton;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        statusText = findViewById(R.id.statusText);
+        addressText = findViewById(R.id.addressText);
+        accessibilityText = findViewById(R.id.accessibilityText);
+        toggleButton = findViewById(R.id.toggleButton);
+
+        addressText.setText(formatAddressList(getLocalIPv4Addresses(), DEFAULT_PORT));
+        toggleButton.setOnClickListener(this::onToggle);
+        refreshAccessibilityState();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshAccessibilityState();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (server != null) {
+            server.stop();
+            server = null;
+        }
+        super.onDestroy();
+    }
+
+    private void onToggle(View view) {
+        if (server != null) {
+            server.stop();
+            server = null;
+            updateUi();
+        } else {
+            startServer();
+        }
+    }
+
+    private synchronized void startServer() {
+        if (server != null) {
+            return;
+        }
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        GestureTarget target = new GestureTarget(metrics.widthPixels, metrics.heightPixels);
+        server =
+                new TcpInputServer(
+                        target,
+                        state ->
+                                mainThread.post(
+                                        () -> {
+                                            setStatus(state);
+                                            updateUi();
+                                        }));
+        try {
+            server.start(DEFAULT_PORT);
+            setStatus("Listening on port " + server.getPort());
+        } catch (IOException e) {
+            setStatus("Could not start: " + e.getMessage());
+            server = null;
+        }
+        updateUi();
+    }
+
+    private void updateUi() {
+        boolean running = server != null;
+        toggleButton.setText(running ? R.string.stop_button : R.string.start_button);
+        statusText.setText(
+                running
+                        ? "Listening on port " + server.getPort() + " — clients: "
+                                + server.getClientCount()
+                        : getString(R.string.status_stopped));
+    }
+
+    private void setStatus(String text) {
+        statusText.setText(
+                String.format(
+                        Locale.getDefault(),
+                        "%s — clients: %d",
+                        text,
+                        server == null ? 0 : server.getClientCount()));
+    }
+
+    private void refreshAccessibilityState() {
+        if (CompanionInputService.isRunning()) {
+            accessibilityText.setText(R.string.accessibility_enabled);
+        } else {
+            accessibilityText.setText(R.string.accessibility_disabled);
+        }
+    }
+
+    private static List<String> getLocalIPv4Addresses() {
+        List<String> addresses = new ArrayList<>();
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces != null && interfaces.hasMoreElements()) {
+                NetworkInterface iface = interfaces.nextElement();
+                if (!iface.isUp() || iface.isLoopback()) {
+                    continue;
+                }
+                Enumeration<InetAddress> inet = iface.getInetAddresses();
+                while (inet.hasMoreElements()) {
+                    InetAddress address = inet.nextElement();
+                    if (address instanceof Inet4Address) {
+                        addresses.add(address.getHostAddress());
+                    }
+                }
+            }
+        } catch (SocketException ignored) {
+        }
+        return addresses;
+    }
+
+    private static String formatAddressList(List<String> addresses, int port) {
+        if (addresses.isEmpty()) {
+            return "IP unknown — connect to this device's Wi-Fi address on port " + port;
+        }
+        return "Enter one of these on the watch (port " + port + "):\n"
+                + TextUtils.join("\n", addresses);
+    }
+}

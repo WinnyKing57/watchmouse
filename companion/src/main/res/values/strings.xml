@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WatchMouse Companion</string>
+    <string name="start_button">Start receiver</string>
+    <string name="stop_button">Stop receiver</string>
+    <string name="status_stopped">Stopped</string>
+    <string name="address_hint">Waiting for Wi-Fi address…</string>
+    <string name="accessibility_hint">Gesture handling status…</string>
+    <string name="accessibility_enabled">Accessibility service: enabled</string>
+    <string name="accessibility_disabled">Accessibility service: DISABLED — enable
+        "WatchMouse Companion" in Settings → Accessibility so taps and drags work.</string>
+    <string name="accessibility_service_description">
+        Lets the WatchMouse watch control this device over Wi-Fi by performing taps, drags
+        and swipes.
+    </string>
+</resources>

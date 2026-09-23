@@ -68,6 +68,31 @@
 
     <!-- Name of the menu entry for the About dialog. -->
     <string name="pref_appAbout">About</string>
+
+    <!-- Name of the menu entry for the network transport settings. -->
+    <string name="pref_networkTitle">Network target</string>
+    <!-- Name of the preference for enabling the network transport. -->
+    <string name="pref_networkTransport">Network transport (TCP)</string>
+    <!-- Description of the preference for enabling the network transport. -->
+    <string name="pref_networkTransport_summary">Control a PC or another Android device over Wi-Fi instead of Bluetooth</string>
+    <!-- Name of the preference for the receiver host address. -->
+    <string name="pref_netHost">Receiver address</string>
+    <!-- Description of the preference for the receiver host address. -->
+    <string name="pref_netHost_summary">IP address or hostname of the receiver</string>
+    <!-- Name of the preference for the receiver TCP port. -->
+    <string name="pref_netPort">Port</string>
+    <!-- Description of the preference for the receiver TCP port. -->
+    <string name="pref_netPort_summary">TCP port listened to by the receiver (default 8888)</string>
+    <!-- Title of the preference showing the network connection state. -->
+    <string name="pref_netStatus">Connection</string>
+    <!-- Summary shown when the network connection is established. -->
+    <string name="pref_net_connected">Connected to %1$s</string>
+    <!-- Summary shown when the network connection is not established. -->
+    <string name="pref_net_disconnected">Not connected</string>
+    <!-- Title of the preference that opens the main input menu. -->
+    <string name="pref_netOpen">Select input mode</string>
+    <!-- Description of the preference that opens the main input menu. -->
+    <string name="pref_netOpen_summary">Pick mouse, touchpad, keypad or keyboard</string>
     <!-- Title of the button that shows the license. -->
     <string name="pref_about_openSource">Open source license</string>
     <!-- Button that triggers an in-app update check. -->

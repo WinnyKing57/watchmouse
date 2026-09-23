@@ -96,7 +96,7 @@ public class KeypadController {
                 @Override
                 @MainThread
                 public void onConnectionStateChanged(BluetoothDevice device, int state) {
-                    if (state == BluetoothProfile.STATE_DISCONNECTED) {
+                    if (state == BluetoothProfile.STATE_DISCONNECTED && !sendRouter.isNetworkMode()) {
                         ui.onDeviceDisconnected();
                     }
                 }
@@ -104,7 +104,7 @@ public class KeypadController {
                 @Override
                 @MainThread
                 public void onAppStatusChanged(boolean registered) {
-                    if (!registered) {
+                    if (!registered && !sendRouter.isNetworkMode()) {
                         ui.onDeviceDisconnected();
                     }
                 }
@@ -114,10 +114,17 @@ public class KeypadController {
                 public void onServiceStateChanged(BluetoothProfile proxy) {}
             };
 
+    private final SendRouter.StatusListener transportStatus =
+            () -> {
+                if (sendRouter.isNetworkMode()) {
+                    ui.onDeviceDisconnected();
+                }
+            };
+
     private final Ui ui;
     private final KeyNameProvider keyNameProvider;
     private final SettingsUtil settings;
-    private final HidDataSender hidDataSender;
+    private final SendRouter sendRouter;
     private final KeyboardHelper keyboardHelper;
 
     private int touchArea;
@@ -133,8 +140,8 @@ public class KeypadController {
         this.ui = checkNotNull(ui);
         this.keyNameProvider = checkNotNull(keyNameProvider);
         this.settings = new SettingsUtil(context);
-        this.hidDataSender = HidDataSender.getInstance();
-        this.keyboardHelper = new KeyboardHelper(hidDataSender);
+        this.sendRouter = SendRouter.getInstance();
+        this.keyboardHelper = new KeyboardHelper(sendRouter);
     }
 
     /**
@@ -145,7 +152,8 @@ public class KeypadController {
      *     constructor.
      */
     public KeypadGestureDetector.GestureListener onCreate(Context context) {
-        hidDataSender.register(context, profileListener);
+        HidDataSender.getInstance().register(context, profileListener);
+        sendRouter.registerStatusListener(transportStatus);
         return new KeypadGestureListener();
     }
 
@@ -164,7 +172,8 @@ public class KeypadController {
      * @param context The context to unregister listener with.
      */
     public void onDestroy(Context context) {
-        hidDataSender.unregister(context, profileListener);
+        sendRouter.unregisterStatusListener(transportStatus);
+        HidDataSender.getInstance().unregister(context, profileListener);
     }
 
     /**
@@ -173,7 +182,7 @@ public class KeypadController {
      * @param delta Movement of the Mouse Wheel.
      */
     public void onRotaryInput(float delta) {
-        hidDataSender.sendMouse(false, false, false, 0, 0, (int) delta);
+        sendRouter.sendMouse(false, false, false, 0, 0, (int) delta);
     }
 
     private int getSwipeKey() {

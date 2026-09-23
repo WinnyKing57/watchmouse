@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright 2018 Google LLC All Rights Reserved.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+        android:title="@string/pref_networkTitle">
+    <androidx.preference.SwitchPreferenceCompat
+            android:key="pref_transport_network"
+            android:title="@string/pref_networkTransport"
+            android:summary="@string/pref_networkTransport_summary"
+            android:persistent="false" />
+    <androidx.preference.EditTextPreference
+            android:key="pref_net_host"
+            android:title="@string/pref_netHost"
+            android:summary="@string/pref_netHost_summary"
+            android:persistent="false"
+            android:inputType="textUri" />
+    <androidx.preference.EditTextPreference
+            android:key="pref_net_port"
+            android:title="@string/pref_netPort"
+            android:summary="@string/pref_netPort_summary"
+            android:persistent="false"
+            android:inputType="number" />
+    <Preference
+            android:key="pref_net_status"
+            android:title="@string/pref_netStatus"
+            android:summary="@string/pref_net_disconnected"
+            android:persistent="false"
+            android:selectable="false" />
+    <Preference
+            android:key="pref_net_open"
+            android:title="@string/pref_netOpen"
+            android:summary="@string/pref_netOpen_summary"
+            android:icon="@drawable/ic_am_hand_center"
+            android:persistent="false" />
+</PreferenceScreen>

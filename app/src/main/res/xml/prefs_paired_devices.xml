@@ -23,6 +23,12 @@
             android:order="200"
             android:fragment="com.winnyking.watchmouse.ui.devices.AvailableDevicesFragment" />
     <Preference
+            android:key="pref_networkTarget"
+            android:title="@string/pref_networkTitle"
+            android:icon="@drawable/ic_am_hand_center"
+            android:order="250"
+            android:fragment="com.winnyking.watchmouse.ui.devices.NetworkTargetFragment" />
+    <Preference
             android:key="pref_appAbout"
             android:title="@string/pref_appAbout"
             android:icon="@drawable/ic_info"
