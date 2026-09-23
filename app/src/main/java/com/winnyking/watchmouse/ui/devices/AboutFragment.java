@@ -25,6 +25,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,7 +38,7 @@ import androidx.fragment.app.Fragment;
 import com.winnyking.watchmouse.BuildConfig;
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.ota.ApkInstaller;
-import com.winnyking.watchmouse.ota.IssueReporter;
+import com.winnyking.watchmouse.ota.LogReporter;
 import com.winnyking.watchmouse.ota.UpdateChecker;
 import com.winnyking.watchmouse.ota.UpdateInfo;
 
@@ -170,22 +171,24 @@ public class AboutFragment extends Fragment {
     }
 
     private void sendReport() {
-        if (BuildConfig.GITHUB_ISSUES_TOKEN.isEmpty()) {
+        if (BuildConfig.REPORT_ENDPOINT.isEmpty()) {
             updateStatus.setText(getString(R.string.report_failed, "Report not configured"));
             return;
         }
         updateStatus.setText(R.string.report_preparing);
         reportButton.setEnabled(false);
-        IssueReporter.report(
-                new IssueReporter.Callback() {
+        LogReporter.report(
+                getContext(),
+                new LogReporter.Callback() {
                     @Override
-                    public void onSuccess(long issueNumber) {
+                    public void onSuccess(long reportId) {
                         reportUrl =
-                                "https://github.com/WinnyKing57/watchmouse/issues/"
-                                        + issueNumber;
+                                BuildConfig.REPORT_ENDPOINT.replaceAll("/+$", "")
+                                        + "/reports/"
+                                        + reportId;
                         reportButton.setText(R.string.report_open);
                         reportButton.setEnabled(true);
-                        updateStatus.setText(getString(R.string.report_sent, issueNumber));
+                        updateStatus.setText(getString(R.string.report_sent, reportId));
                     }
 
                     @Override
@@ -214,6 +217,28 @@ public class AboutFragment extends Fragment {
                         downloading = false;
                         updateButton.setEnabled(true);
                         updateStatus.setText(message);
+                    }
+
+                    @Override
+                    public void onInstallPermissionNeeded() {
+                        downloading = false;
+                        updateButton.setEnabled(true);
+                        updateStatus.setText(R.string.update_installPermission);
+                        Intent intent =
+                                new Intent(
+                                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                        Uri.parse(
+                                                "package:"
+                                                        + getContext().getPackageName()));
+                        try {
+                            startActivity(intent);
+                        } catch (ActivityNotFoundException e) {
+                            Toast.makeText(
+                                            getContext(),
+                                            R.string.update_installPermission,
+                                            Toast.LENGTH_LONG)
+                                    .show();
+                        }
                     }
                 });
     }

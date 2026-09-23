@@ -16,6 +16,9 @@
 
 package com.winnyking.watchmouse.ota;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -33,33 +36,35 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
-/** Collects device logs and opens a bug report issue on the GitHub tracker. */
-public final class IssueReporter {
+/** Collects device info and logcat, then POSTs them to the report endpoint. */
+public final class LogReporter {
 
-    private static final String TAG = "IssueReporter";
-    private static final String API_URL =
-            "https://api.github.com/repos/WinnyKing57/watchmouse/issues";
+    private static final String TAG = "LogReporter";
+    private static final String PREFS = "log_reporter";
+    private static final String KEY_CLIENT_ID = "client_id";
 
     public interface Callback {
-        void onSuccess(long issueNumber);
+        void onSuccess(long reportId);
 
         void onError(String message);
     }
 
-    private IssueReporter() {}
+    private LogReporter() {}
 
     /** Runs the report in the background and delivers the result on the main thread. */
-    public static void report(final Callback callback) {
+    public static void report(final Context context, final Callback callback) {
         final Handler main = new Handler(Looper.getMainLooper());
         Thread thread =
                 new Thread(
                         () -> {
                             try {
-                                final long issueNumber = createIssue();
-                                main.post(() -> callback.onSuccess(issueNumber));
+                                final long reportId =
+                                        sendReport(context, BuildConfig.REPORT_ENDPOINT);
+                                main.post(() -> callback.onSuccess(reportId));
                             } catch (Exception e) {
-                                Log.e(TAG, "Bug report failed", e);
+                                Log.e(TAG, "Report failed", e);
                                 main.post(
                                         () ->
                                                 callback.onError(
@@ -68,66 +73,65 @@ public final class IssueReporter {
                                                                 : e.getMessage()));
                             }
                         },
-                        "IssueReporter");
+                        "LogReporter");
         thread.start();
     }
 
-    private static long createIssue() throws Exception {
-        String title =
-                "[Rapport] WatchMouse "
-                        + BuildConfig.VERSION_NAME
-                        + " – "
-                        + Build.MANUFACTURER
-                        + " "
-                        + Build.MODEL;
-        JSONObject body = new JSONObject();
-        body.put("title", title);
-        body.put("body", buildReportBody());
+    private static long sendReport(Context context, String endpoint) throws Exception {
+        JSONObject payload = new JSONObject();
+        payload.put("client_id", getClientId(context));
+        payload.put("version", BuildConfig.VERSION_NAME);
+        payload.put("version_code", BuildConfig.VERSION_CODE);
+        payload.put("manufacturer", Build.MANUFACTURER);
+        payload.put("model", Build.MODEL);
+        payload.put("sdk", Build.VERSION.SDK_INT);
+        payload.put("build", Build.VERSION.INCREMENTAL);
+        payload.put("battery", readBattery(context));
+        payload.put("logs", readOwnLogcat());
 
         HttpURLConnection connection =
-                (HttpURLConnection) new URL(API_URL).openConnection();
+                (HttpURLConnection) new URL(endpoint).openConnection();
         connection.setRequestMethod("POST");
         connection.setConnectTimeout(10000);
         connection.setReadTimeout(10000);
         connection.setDoOutput(true);
-        connection.setRequestProperty("Accept", "application/vnd.github+json");
         connection.setRequestProperty("Content-Type", "application/json");
-        connection.setRequestProperty("Authorization", "Bearer " + BuildConfig.GITHUB_ISSUES_TOKEN);
         try {
             OutputStream output = connection.getOutputStream();
-            output.write(body.toString().getBytes(StandardCharsets.UTF_8));
+            output.write(payload.toString().getBytes(StandardCharsets.UTF_8));
             output.flush();
             output.close();
 
             int code = connection.getResponseCode();
-            if (code != HttpURLConnection.HTTP_CREATED) {
-                throw new IOException("GitHub API returned " + code);
+            if (code != HttpURLConnection.HTTP_CREATED && code != HttpURLConnection.HTTP_OK) {
+                throw new IOException("Server returned " + code);
             }
             String response = readStream(connection.getInputStream());
-            JSONObject issue = new JSONObject(response);
-            return issue.getLong("number");
+            JSONObject json = new JSONObject(response);
+            return json.optLong("id");
         } finally {
             connection.disconnect();
         }
     }
 
-    private static String buildReportBody() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("## Device\n");
-        builder.append("- Manufacturer: ").append(Build.MANUFACTURER).append('\n');
-        builder.append("- Model: ").append(Build.MODEL).append('\n');
-        builder.append("- Version: ").append(Build.VERSION.RELEASE).append('\n');
-        builder.append("- SDK: ").append(Build.VERSION.SDK_INT).append('\n');
-        builder.append("- Build: ").append(Build.VERSION.INCREMENTAL).append('\n');
-        builder.append("- App version: ")
-                .append(BuildConfig.VERSION_NAME)
-                .append(" (")
-                .append(BuildConfig.VERSION_CODE)
-                .append(")\n\n");
-        builder.append("## Logs\n\n```text\n");
-        builder.append(readOwnLogcat());
-        builder.append("\n```\n");
-        return builder.toString();
+    private static String getClientId(Context context) {
+        SharedPreferences prefs =
+                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String id = prefs.getString(KEY_CLIENT_ID, null);
+        if (id == null) {
+            id = UUID.randomUUID().toString();
+            prefs.edit().putString(KEY_CLIENT_ID, id).apply();
+        }
+        return id;
+    }
+
+    private static int readBattery(Context context) {
+        BatteryManager manager =
+                (BatteryManager) context.getSystemService(Context.BATTERY_SERVICE);
+        if (manager == null) {
+            return -1;
+        }
+        return manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
     }
 
     private static String readOwnLogcat() {

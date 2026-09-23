@@ -51,6 +51,7 @@
     <string name="update_downloadProgress">Téléchargement… %1$d%%</string>
     <string name="update_checkFailed">Échec de la vérification : %1$s</string>
     <string name="update_installFailed">Échec de la mise à jour</string>
+    <string name="update_installPermission">Autorisez l\'installation d\'applications pour WatchMouse, puis réappuyez sur Télécharger &amp; installer.</string>
     <string name="update_installedSuccess">Mise à jour installée</string>
     <string name="pref_about_sendReport">Envoyer un rapport</string>
     <string name="report_preparing">Préparation du rapport…</string>

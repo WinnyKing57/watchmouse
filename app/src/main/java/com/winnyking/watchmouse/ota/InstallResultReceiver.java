@@ -20,6 +20,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInstaller;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.winnyking.watchmouse.R;
@@ -29,14 +30,22 @@ public class InstallResultReceiver extends BroadcastReceiver {
 
     public static final String ACTION_INSTALL_RESULT =
             "com.winnyking.watchmouse.INSTALL_RESULT";
+    private static final String TAG = "InstallResultReceiver";
 
     @Override
     public void onReceive(Context context, Intent intent) {
         int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
-        int textRes =
-                status == PackageInstaller.STATUS_SUCCESS
-                        ? R.string.update_installedSuccess
-                        : R.string.update_installFailed;
-        Toast.makeText(context, textRes, Toast.LENGTH_LONG).show();
+        String detail = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
+        Log.e(TAG, "Install result status=" + status + " detail=" + detail);
+        String message;
+        if (status == PackageInstaller.STATUS_SUCCESS) {
+            message = context.getString(R.string.update_installedSuccess);
+        } else {
+            message = context.getString(R.string.update_installFailed);
+            if (detail != null && !detail.isEmpty()) {
+                message += "\n" + detail;
+            }
+        }
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show();
     }
 }

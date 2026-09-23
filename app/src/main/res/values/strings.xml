@@ -90,6 +90,8 @@
     <string name="update_checkFailed">Update check failed: %1$s</string>
     <!-- Status shown when the update installation failed. -->
     <string name="update_installFailed">Update failed</string>
+    <!-- Prompt to allow installing unknown apps so the update can be installed. -->
+    <string name="update_installPermission">Allow installing apps for WatchMouse, then tap Download &amp; install again.</string>
     <!-- Status shown after a successful update installation. -->
     <string name="update_installedSuccess">Update installed</string>
     <!-- Button that sends the bug report to the WatchMouse GitHub tracker. -->

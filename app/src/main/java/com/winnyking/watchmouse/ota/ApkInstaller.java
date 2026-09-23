@@ -43,6 +43,8 @@ public final class ApkInstaller {
         void onProgress(int percent);
 
         void onError(String message);
+
+        void onInstallPermissionNeeded();
     }
 
     private ApkInstaller() {}
@@ -107,6 +109,10 @@ public final class ApkInstaller {
     }
 
     private static void install(Context context, File apk, Listener listener) {
+        if (!context.getPackageManager().canRequestPackageInstalls()) {
+            postInstallPermissionNeeded(listener);
+            return;
+        }
         try {
             PackageInstaller.SessionParams params =
                     new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
@@ -143,6 +149,10 @@ public final class ApkInstaller {
 
     private static void postProgress(final Listener listener, final int percent) {
         new Handler(Looper.getMainLooper()).post(() -> listener.onProgress(percent));
+    }
+
+    private static void postInstallPermissionNeeded(final Listener listener) {
+        new Handler(Looper.getMainLooper()).post(listener::onInstallPermissionNeeded);
     }
 
     private static void postError(final Listener listener, final String message) {
