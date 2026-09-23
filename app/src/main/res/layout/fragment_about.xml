@@ -54,9 +54,29 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="8dp"
             android:paddingStart="@dimen/info_action_padding"
             android:paddingEnd="@dimen/info_action_padding"/>
+
+        <TextView
+            android:id="@+id/update_status"
+            style="@style/Text.Dialog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_horizontal"
+            android:paddingStart="@dimen/info_action_padding"
+            android:paddingEnd="@dimen/info_action_padding"/>
+
+        <Button
+            android:id="@+id/update"
+            android:text="@string/pref_about_checkUpdates"
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginBottom="16dp"/>
 
         <Button
             android:id="@+id/license"

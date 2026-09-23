@@ -28,13 +28,24 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+
 import com.winnyking.watchmouse.R;
+import com.winnyking.watchmouse.ota.ApkInstaller;
+import com.winnyking.watchmouse.ota.UpdateChecker;
+import com.winnyking.watchmouse.ota.UpdateInfo;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 public class AboutFragment extends Fragment {
+
+    private Button updateButton;
+    private TextView updateStatus;
+    private String currentVersion;
+    private UpdateInfo pendingUpdate;
+    private boolean downloading;
 
     @Override
     public View onCreateView(
@@ -43,18 +54,22 @@ public class AboutFragment extends Fragment {
 
         Context context = getContext();
         PackageInfo packageInfo;
-        String versionInfo = "0.01";
+        currentVersion = "0.01";
         try {
             packageInfo =
                     context.getPackageManager()
                             .getPackageInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            versionInfo = packageInfo.versionName;
+            currentVersion = packageInfo.versionName;
         } catch (NameNotFoundException e) {
             e.printStackTrace();
         }
 
         TextView message = root.findViewById(R.id.message);
-        message.setText(versionInfo);
+        message.setText(currentVersion);
+
+        updateButton = root.findViewById(R.id.update);
+        updateStatus = root.findViewById(R.id.update_status);
+        updateButton.setOnClickListener(v -> onUpdateButtonClicked());
 
         Button license = root.findViewById(R.id.license);
         license.setOnClickListener(v -> createLicenseDialog(getContext()));
@@ -66,6 +81,66 @@ public class AboutFragment extends Fragment {
     public void onResume() {
         super.onResume();
         getView().requestFocus();
+    }
+
+    private void onUpdateButtonClicked() {
+        if (downloading) {
+            return;
+        }
+        if (pendingUpdate == null) {
+            checkForUpdates();
+        } else {
+            downloadAndInstall();
+        }
+    }
+
+    private void checkForUpdates() {
+        updateStatus.setText(R.string.pref_about_checkingUpdates);
+        updateButton.setEnabled(false);
+        final String current = currentVersion;
+        UpdateChecker.check(
+                new UpdateChecker.Callback() {
+                    @Override
+                    public void onSuccess(UpdateInfo info) {
+                        updateButton.setEnabled(true);
+                        if (UpdateInfo.compareVersions(info.latestVersionName, current) > 0) {
+                            pendingUpdate = info;
+                            updateStatus.setText(
+                                    getString(R.string.update_available, info.latestVersionName));
+                            updateButton.setText(R.string.update_downloadAndInstall);
+                        } else {
+                            updateStatus.setText(R.string.update_upToDate);
+                        }
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        updateButton.setEnabled(true);
+                        updateStatus.setText(getString(R.string.update_checkFailed, message));
+                    }
+                });
+    }
+
+    private void downloadAndInstall() {
+        downloading = true;
+        updateButton.setEnabled(false);
+        updateStatus.setText(R.string.update_downloading);
+        ApkInstaller.downloadAndInstall(
+                getContext(),
+                pendingUpdate.apkUrl,
+                new ApkInstaller.Listener() {
+                    @Override
+                    public void onProgress(int percent) {
+                        updateStatus.setText(getString(R.string.update_downloadProgress, percent));
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        downloading = false;
+                        updateButton.setEnabled(true);
+                        updateStatus.setText(message);
+                    }
+                });
     }
 
     private static void createLicenseDialog(Context context) {

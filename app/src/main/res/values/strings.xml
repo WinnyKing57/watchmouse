@@ -64,6 +64,26 @@
     <string name="pref_appAbout">About</string>
     <!-- Title of the button that shows the license. -->
     <string name="pref_about_openSource">Open source license</string>
+    <!-- Button that triggers an in-app update check. -->
+    <string name="pref_about_checkUpdates">Check for updates</string>
+    <!-- Status shown while an update check is running. -->
+    <string name="pref_about_checkingUpdates">Checking for updates…</string>
+    <!-- Status shown when a newer version is available. -->
+    <string name="update_available">Update v%1$s available</string>
+    <!-- Status shown when the app is already up to date. -->
+    <string name="update_upToDate">WatchMouse is up to date</string>
+    <!-- Button that downloads and installs the update. -->
+    <string name="update_downloadAndInstall">Download &amp; install</string>
+    <!-- Status shown while the update is downloading. -->
+    <string name="update_downloading">Downloading update…</string>
+    <!-- Download progress, with percent. -->
+    <string name="update_downloadProgress">Downloading… %1$d%%</string>
+    <!-- Status shown when the update check failed, with reason. -->
+    <string name="update_checkFailed">Update check failed: %1$s</string>
+    <!-- Status shown when the update installation failed. -->
+    <string name="update_installFailed">Update failed</string>
+    <!-- Status shown after a successful update installation. -->
+    <string name="update_installedSuccess">Update installed</string>
 
     <!-- Title at the top of the input mode selection -->
     <string name="pref_mode_select">Input Mode</string>
