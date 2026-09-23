@@ -83,7 +83,45 @@ public class HidDataSender
 
     @GuardedBy("lock")
     private int connectAttempts;
+
+    @GuardedBy("lock")
+    private BluetoothProfile profileProxy;
+
+    @GuardedBy("lock")
+    private int registeredAttempts;
+
+    private static final int REGISTER_TIMEOUT_MS = 7000;
+    private static final int MAX_REGISTER_ATTEMPTS = 3;
     private final Handler mainThread = new Handler(Looper.getMainLooper());
+
+    private final Runnable registrationWatchdog =
+            new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (lock) {
+                        if (isAppRegistered || profileProxy == null) {
+                            return;
+                        }
+                        registeredAttempts++;
+                        if (registeredAttempts >= MAX_REGISTER_ATTEMPTS) {
+                            // The HAL still hasn't confirmed the registration. Trust the
+                            // registerApp() return value and attempt the connection anyway.
+                            Log.w(TAG, "No registration confirmation after "
+                                    + registeredAttempts + " attempts; proceeding optimistically");
+                            profileListener.onAppStatusChanged(true);
+                            return;
+                        }
+                        Log.w(TAG, "registerApp not confirmed yet ("
+                                + registeredAttempts + "/" + MAX_REGISTER_ATTEMPTS
+                                + "); re-registering to unstick the HAL");
+                        hidDeviceApp.unregisterApp();
+                        boolean ok = hidDeviceApp.registerApp(profileProxy);
+                        if (ok) {
+                            mainThread.postDelayed(registrationWatchdog, REGISTER_TIMEOUT_MS);
+                        }
+                    }
+                }
+            };
 
     /**
      * @param hidDeviceApp HID Device App interface.
@@ -166,6 +204,9 @@ public class HidDataSender
 
             connectedDevice = null;
             waitingForDevice = null;
+            profileProxy = null;
+            mainThread.removeCallbacks(registrationWatchdog);
+            registeredAttempts = 0;
         }
     }
 
@@ -212,6 +253,7 @@ public class HidDataSender
     public String describeStatus() {
         synchronized (lock) {
             return "app_registered=" + isAppRegistered
+                    + ", registered_attempts=" + registeredAttempts
                     + ", connected=" + (connectedDevice == null ? "none" : connectedDevice.getAddress())
                     + ", waiting_for=" + (waitingForDevice == null ? "none" : waitingForDevice.getAddress())
                     + ", listeners=" + listeners.size()
@@ -248,17 +290,22 @@ public class HidDataSender
                     synchronized (lock) {
                         Log.i(TAG, "ServiceStateChanged proxy=" + (proxy == null ? "null" : "present"));
                         if (proxy == null) {
+                            profileProxy = null;
+                            mainThread.removeCallbacks(registrationWatchdog);
                             if (isAppRegistered) {
                                 // Service has disconnected before we could unregister the app.
                                 // Notify listeners, update the UI and internal state.
                                 onAppStatusChanged(false);
                             }
                         } else {
-                            boolean registered = hidDeviceApp.registerApp(proxy);
-                            if (registered) {
-                                // Trust the registerApp result instead of waiting for a system
-                                // callback that may never be delivered (WearOS forks).
-                                onAppStatusChanged(true);
+                            profileProxy = proxy;
+                            registeredAttempts = 0;
+                            mainThread.removeCallbacks(registrationWatchdog);
+                            if (hidDeviceApp.registerApp(proxy)) {
+                                // Registration is confirmed only by the onAppStatusChanged(true)
+                                // callback. If the HAL never delivers it, the watchdog unregisters
+                                // and re-registers to unstick the stack.
+                                mainThread.postDelayed(registrationWatchdog, REGISTER_TIMEOUT_MS);
                             }
                         }
                         updateDeviceList();
@@ -296,6 +343,9 @@ public class HidDataSender
                 @MainThread
                 public void onAppStatusChanged(boolean registered) {
                     synchronized (lock) {
+                        if (registered) {
+                            mainThread.removeCallbacks(registrationWatchdog);
+                        }
                         if (isAppRegistered == registered) {
                             // We are already in the correct state.
                             return;
