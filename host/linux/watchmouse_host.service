@@ -1,0 +1,12 @@
+[Unit]
+Description=WatchMouse Linux host (uinput)
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/watchmouse-host/watchmouse_host.py --port 8888
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
