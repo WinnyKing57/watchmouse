@@ -43,10 +43,20 @@ Montre (WatchMouse) ──TCP/Wi-Fi──► Cible :
 ```
 - L'UI de la montre est réutilisée telle quelle ; seul le transport change (deltas + boutons sur un protocole TCP générique).
 - Pièces prévues :
-  1. Client TCP dans l'app de la montre (à côté du transport HID existant).
-  2. Serveur `uinput` Linux installé sur WinnyDebas (Debian).
-  3. App compagnon Android (récepteur + « Choix de la cible » + service d'accessibilité) — à venir.
+  1. ✅ Client TCP dans l'app de la montre (à côté du transport HID existant) — v1.36.
+  2. ✅ Serveur `uinput` Linux installé sur WinnyDebas (Debian) — `host/linux/`.
+  3. ✅ App compagnon Android (récepteur + « Choix de la cible » + service d'accessibilité) — `companion/`.
+  4. ⚠️ Serveur `SendInput` Windows — `host/windows/`, **écrit mais non testé** (aucune machine Windows).
 - L'installation/MAJ de l'app de la montre reste via adb / notre flux OTA (pas d'API publique pour pousser un APK montre depuis un téléphone).
+
+## Transport réseau (v1.36+)
+- Protocole : JSON newline-delimited sur TCP port 8888 (détail complet : `host/README.md`).
+- Montre : client TCP avec reconnexion auto (2 → 30 s), détection de liaison morte (ping hôte toutes les 5 s + timeout lecture 20 s).
+- Cibles :
+  - `host/linux/` : serveur uinput (souris + clavier réels) — testé unitairement (mock uinput), à valider sur WinnyDebas.
+  - `host/windows/` : serveur SendInput (scancodes Set-1) — non testé.
+  - `companion/` : app Android Accessibilité (tap/glissé/long-appui/molette/back sur écran tactile ; clavier non injecté au niveau texte, limité à Ctrl/Shift/Alt/entrée/flèches discrets).
+- CI GitHub : build de l'app (werk `app`) + build du companion (werk `companion`, upload APK en artefact). Installation du companion sur tablette/téléphone via l'artefact CI (ou adb).
 
 ## État des versions
 | Version | Statut |
