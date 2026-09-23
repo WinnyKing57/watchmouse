@@ -108,6 +108,17 @@ public class PairedDevicesFragment extends PreferenceFragmentCompat {
     }
 
     @Override
+    public boolean onPreferenceTreeClick(Preference preference) {
+        if (preference.getFragment() != null) {
+            Fragment fragment =
+                    Fragment.instantiate(getContext(), preference.getFragment(), null);
+            ((WelcomeActivity) getActivity()).startPreferenceFragment(fragment, true);
+            return true;
+        }
+        return super.onPreferenceTreeClick(preference);
+    }
+
+    @Override
     public void onNavigateToScreen(PreferenceScreen preferenceScreen) {
         Fragment fragment =
                 Fragment.instantiate(getContext(), preferenceScreen.getFragment(), null);
