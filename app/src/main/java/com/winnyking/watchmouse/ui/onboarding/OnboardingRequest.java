@@ -60,7 +60,16 @@ public class OnboardingRequest {
     }
 
     /** Starts the onboarding activity for the specified tutorial from within a fragment. */
-    public void start(Fragment fragment) {
+    public void start(android.app.Fragment fragment) {
+        fragment.startActivityForResult(
+                OnboardingResources.forScreen(key)
+                        .toIntent(activity)
+                        .putExtra(OnboardingController.EXTRA_KEY, key),
+                OnboardingController.ONBOARDING_REQUEST_CODE);
+    }
+
+    /** Starts the onboarding activity for the specified tutorial from within an AndroidX fragment. */
+    public void start(androidx.fragment.app.Fragment fragment) {
         fragment.startActivityForResult(
                 OnboardingResources.forScreen(key)
                         .toIntent(activity)

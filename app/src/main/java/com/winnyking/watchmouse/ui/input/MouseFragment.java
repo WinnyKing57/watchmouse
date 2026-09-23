@@ -17,12 +17,10 @@
 package com.winnyking.watchmouse.ui.input;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.wearable.input.RotaryEncoder;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -31,11 +29,15 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+
+import androidx.fragment.app.Fragment;
 import androidx.wear.widget.drawer.WearableActionDrawerView;
 import androidx.wear.widget.drawer.WearableNavigationDrawerView;
+
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.input.MouseController;
 import com.winnyking.watchmouse.input.MouseSensorListener.HandMode;
+import com.winnyking.watchmouse.input.RotaryEncoder;
 import com.winnyking.watchmouse.ui.onboarding.OnboardingController.ScreenKey;
 import com.winnyking.watchmouse.ui.onboarding.OnboardingRequest;
 import java.util.ArrayList;

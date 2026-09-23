@@ -16,20 +16,19 @@
 
 package com.winnyking.watchmouse.ui.input;
 
+import android.app.Activity;
 import android.os.Bundle;
-import android.support.wearable.activity.WearableActivity;
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.input.CalibrationController;
 
 /** Show a spinner animation while the gyroscope is being calibrated. */
-public class CalibrationActivity extends WearableActivity {
+public class CalibrationActivity extends Activity {
 
     private CalibrationController calibrationController;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setAmbientEnabled();
         setContentView(R.layout.activity_calibration);
 
         calibrationController = new CalibrationController(this, this::onCalibrationComplete);

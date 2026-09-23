@@ -54,11 +54,6 @@
             android:foregroundServiceType="connectedDevice" />
 
         <activity
-            android:name="android.support.wearable.preference.WearablePreferenceActivity"
-            android:exported="false"
-            />
-
-        <activity
                 android:name=".ui.devices.WelcomeActivity"
                 android:exported="true"
                 android:launchMode="singleTop"
@@ -77,7 +72,7 @@
         <activity
             android:name=".ui.input.InputActivity"
             android:exported="false"
-            android:theme="@style/Theme.Wearable.Modal"
+            android:theme="@android:style/Theme.DeviceDefault"
             />
 
         <activity

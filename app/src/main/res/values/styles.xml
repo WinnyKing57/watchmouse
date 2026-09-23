@@ -38,6 +38,13 @@
              drawable. -->
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen</item>
         <!-- Set the theme of the Activity that follows your splash screen. -->
-        <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault</item>
+        <item name="postSplashScreenTheme">@style/Theme.Watch</item>
+    </style>
+
+    <!-- Theme applied after the splash screen. Carries the androidx.preference
+         theme definition required by the preference screens. -->
+    <style name="Theme.Watch" parent="@android:style/Theme.DeviceDefault">
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
+        <item name="android:windowBackground">@android:color/black</item>
     </style>
 </resources>

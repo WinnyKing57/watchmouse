@@ -20,9 +20,11 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.StrictMode;
-import android.preference.Preference;
-import android.preference.PreferenceFragment;
-import android.preference.SwitchPreference;
+
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.SwitchPreference;
+
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.input.SettingsUtil;
 import com.winnyking.watchmouse.input.SettingsUtil.SettingKey;
@@ -31,7 +33,7 @@ import com.winnyking.watchmouse.ui.onboarding.OnboardingController.ScreenKey;
 import com.winnyking.watchmouse.ui.onboarding.OnboardingRequest;
 
 /** The main Settings fragment. */
-public class InputSettingsFragment extends PreferenceFragment {
+public class InputSettingsFragment extends PreferenceFragmentCompat {
     private static final String ONBOARDING_PREF = "pref_settingReplayTutorials";
     private static final int CALIBRATION_REQUEST_CODE = 1;
 
@@ -40,15 +42,18 @@ public class InputSettingsFragment extends PreferenceFragment {
     private OnboardingRequest onboardingRequest;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
+    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         final StrictMode.ThreadPolicy oldPolicy = StrictMode.allowThreadDiskReads();
         try {
-            addPreferencesFromResource(R.xml.prefs_input_settings);
+            setPreferencesFromResource(R.xml.prefs_input_settings, rootKey);
         } finally {
             StrictMode.setThreadPolicy(oldPolicy);
         }
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
         settings = new SettingsUtil(getActivity());
         onboardingRequest = new OnboardingRequest(getActivity(), ScreenKey.CALIBRATION);

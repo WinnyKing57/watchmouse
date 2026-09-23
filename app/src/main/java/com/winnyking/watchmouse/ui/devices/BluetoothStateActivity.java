@@ -16,18 +16,18 @@
 
 package com.winnyking.watchmouse.ui.devices;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.wearable.activity.WearableActivity;
 import android.widget.TextView;
 import com.winnyking.watchmouse.R;
 
 /** Show a spinner animation while the Bluetooth is turning on or off. */
-public class BluetoothStateActivity extends WearableActivity {
+public class BluetoothStateActivity extends Activity {
 
     private final BroadcastReceiver bluetoothStateReceiver =
             new BroadcastReceiver() {
@@ -44,7 +44,6 @@ public class BluetoothStateActivity extends WearableActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setAmbientEnabled();
         setContentView(R.layout.activity_bt_state);
         registerReceiver(
                 bluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));

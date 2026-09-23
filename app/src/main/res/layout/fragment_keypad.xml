@@ -86,14 +86,27 @@
         app:layout_constraintWidth_default="percent"
         app:layout_constraintWidth_percent=".2"/>
 
-    <android.support.wearable.view.DismissOverlayView
+    <FrameLayout
         android:id="@+id/dismiss_overlay"
-        android:layout_height="0dp"
         android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#80000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_close"/>
+
+    </FrameLayout>
 
     <FrameLayout
         android:id="@+id/keypad_hint"

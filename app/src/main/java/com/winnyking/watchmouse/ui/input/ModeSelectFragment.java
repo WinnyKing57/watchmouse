@@ -19,15 +19,20 @@ package com.winnyking.watchmouse.ui.input;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.preference.Preference;
-import android.preference.PreferenceFragment;
-import android.support.wearable.preference.WearablePreferenceActivity;
+import android.view.WindowManager;
+
+import androidx.fragment.app.Fragment;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceScreen;
+
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.input.KeyboardInputController;
+import com.winnyking.watchmouse.ui.devices.WelcomeActivity;
 import com.winnyking.watchmouse.ui.input.InputActivity.InputMode;
 
 /** Main menu for choosing the input mode. Also handles the Keyboard Input mode. */
-public class ModeSelectFragment extends PreferenceFragment {
+public class ModeSelectFragment extends PreferenceFragmentCompat {
 
     private static final String KEY_PREF_INPUT_MOUSE = "pref_inputMouse";
     private static final String KEY_PREF_INPUT_TOUCHPAD = "pref_inputTouchpad";
@@ -38,18 +43,21 @@ public class ModeSelectFragment extends PreferenceFragment {
     private KeyboardInputController keyboardController;
 
     @Override
+    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+        setPreferencesFromResource(R.xml.prefs_mode_select, rootKey);
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        addPreferencesFromResource(R.xml.prefs_mode_select);
 
-        WearablePreferenceActivity activity = ((WearablePreferenceActivity) getActivity());
-        activity.setAmbientEnabled();
+        getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         assignIntent(KEY_PREF_INPUT_MOUSE, InputMode.MOUSE);
         assignIntent(KEY_PREF_INPUT_TOUCHPAD, InputMode.TOUCHPAD);
         assignIntent(KEY_PREF_INPUT_CURSOR, InputMode.KEYPAD);
 
-        keyboardController = new KeyboardInputController(activity::finish);
+        keyboardController = new KeyboardInputController(getActivity()::finish);
         keyboardController.onCreate(getContext());
 
         Preference keyboardPref = findPreference(KEY_PREF_INPUT_KEYBOARD);
@@ -63,6 +71,13 @@ public class ModeSelectFragment extends PreferenceFragment {
                         return true;
                     });
         }
+    }
+
+    @Override
+    public void onNavigateToScreen(PreferenceScreen preferenceScreen) {
+        Fragment fragment =
+                Fragment.instantiate(getContext(), preferenceScreen.getFragment(), null);
+        ((WelcomeActivity) getActivity()).startPreferenceFragment(fragment, true);
     }
 
     @Override

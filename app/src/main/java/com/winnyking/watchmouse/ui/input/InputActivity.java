@@ -21,7 +21,6 @@ import static android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP;
 import static android.os.PowerManager.SCREEN_DIM_WAKE_LOCK;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -29,17 +28,22 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
-import android.support.wearable.activity.WearableActivity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+
 import androidx.annotation.IntDef;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.wear.ambient.AmbientModeSupport;
+
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.input.KeyboardInputController;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /** Implements a "card-flip" animation using custom fragment transactions. */
-public class InputActivity extends WearableActivity {
+public class InputActivity extends FragmentActivity
+        implements AmbientModeSupport.AmbientCallbackProvider {
     public static final String EXTRA_INPUT_MODE = "input_mode";
 
     @Retention(RetentionPolicy.SOURCE)
@@ -55,6 +59,17 @@ public class InputActivity extends WearableActivity {
     private KeyboardInputController keyboardController;
     private @InputMode int currentMode;
     private WakeLock wakeLock;
+    private AmbientModeSupport.AmbientController ambientController;
+
+    @Override
+    public AmbientModeSupport.AmbientCallback getAmbientCallback() {
+        return new AmbientModeSupport.AmbientCallback() {
+            @Override
+            public void onEnterAmbient(Bundle ambientDetails) {
+                wakeUpAndFinish();
+            }
+        };
+    }
 
     private final BroadcastReceiver screenReceiver =
             new BroadcastReceiver() {
@@ -70,7 +85,8 @@ public class InputActivity extends WearableActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_card_flip);
-        setAmbientEnabled();
+
+        ambientController = AmbientModeSupport.attach(this);
 
         PowerManager powerManager = getSystemService(PowerManager.class);
         wakeLock =
@@ -89,7 +105,7 @@ public class InputActivity extends WearableActivity {
             }
         }
 
-        getFragmentManager()
+        getSupportFragmentManager()
                 .beginTransaction()
                 .add(R.id.fragment_container, getFragment(currentMode))
                 .commit();
@@ -98,13 +114,7 @@ public class InputActivity extends WearableActivity {
     }
 
     @Override
-    public void onEnterAmbient(Bundle ambientDetails) {
-        super.onEnterAmbient(ambientDetails);
-        wakeUpAndFinish();
-    }
-
-    @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         keyboardController.onResume();
         getFragment().getView().requestFocus();
@@ -163,12 +173,12 @@ public class InputActivity extends WearableActivity {
     }
 
     private Fragment getFragment() {
-        return getFragmentManager().findFragmentById(R.id.fragment_container);
+        return getSupportFragmentManager().findFragmentById(R.id.fragment_container);
     }
 
     private void flipCard(@InputMode int mode) {
         currentMode = mode;
-        getFragmentManager()
+        getSupportFragmentManager()
                 .beginTransaction()
                 .setCustomAnimations(R.animator.card_flip_right_in, R.animator.card_flip_right_out)
                 .replace(R.id.fragment_container, getFragment(currentMode))

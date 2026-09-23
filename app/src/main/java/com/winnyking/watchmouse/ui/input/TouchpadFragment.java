@@ -16,16 +16,18 @@
 
 package com.winnyking.watchmouse.ui.input;
 
-import android.app.Fragment;
 import android.os.Bundle;
-import android.support.wearable.input.RotaryEncoder;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+
+import androidx.fragment.app.Fragment;
+
 import com.winnyking.watchmouse.R;
+import com.winnyking.watchmouse.input.RotaryEncoder;
 import com.winnyking.watchmouse.input.TouchpadController;
 import com.winnyking.watchmouse.input.TouchpadGestureDetector;
 

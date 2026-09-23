@@ -25,9 +25,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.wearable.input.RemoteInputConstants;
-import android.support.wearable.input.RemoteInputIntent;
+
 import androidx.annotation.MainThread;
+import androidx.wear.input.RemoteInputIntentHelper;
+
+import com.google.common.collect.ImmutableList;
 import com.winnyking.watchmouse.bluetooth.HidDataSender;
 import javax.annotation.Nullable;
 
@@ -82,19 +84,23 @@ public class KeyboardInputController {
      * @return Intent for Remote Input or {@code null} if Remote Input is not supported.
      */
     public @Nullable Intent getInputIntent(PackageManager pm) {
+        // Legacy keys consumed by the Wear OS remote input system component.
+        final String EXTRA_DISALLOW_EMOJI =
+                "android.support.wearable.input.extra.DISALLOW_EMOJI";
+        final String EXTRA_SKIP_CONFIRMATION_UI =
+                "android.support.wearable.input.extra.SKIP_CONFIRMATION_UI";
+
         Bundle extras = new Bundle();
-        extras.putBoolean(RemoteInputConstants.EXTRA_DISALLOW_EMOJI, true);
-        final Intent inputIntent =
-                new Intent(RemoteInputIntent.ACTION_REMOTE_INPUT)
-                        .putExtra(
-                                RemoteInputIntent.EXTRA_REMOTE_INPUTS,
-                                new RemoteInput[] {
-                                    new RemoteInput.Builder(Intent.EXTRA_TEXT)
-                                            .setAllowFreeFormInput(true)
-                                            .addExtras(extras)
-                                            .build()
-                                })
-                        .putExtra(RemoteInputIntent.EXTRA_SKIP_CONFIRMATION_UI, true);
+        extras.putBoolean(EXTRA_DISALLOW_EMOJI, true);
+        final Intent inputIntent = RemoteInputIntentHelper.createActionRemoteInputIntent();
+        RemoteInputIntentHelper.putRemoteInputsExtra(
+                inputIntent,
+                ImmutableList.of(
+                        new RemoteInput.Builder(Intent.EXTRA_TEXT)
+                                .setAllowFreeFormInput(true)
+                                .addExtras(extras)
+                                .build()));
+        inputIntent.putExtra(EXTRA_SKIP_CONFIRMATION_UI, true);
 
         if (pm.resolveActivity(inputIntent, PackageManager.MATCH_DEFAULT_ONLY) != null) {
             return inputIntent;

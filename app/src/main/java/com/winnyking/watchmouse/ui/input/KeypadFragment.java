@@ -17,12 +17,9 @@
 package com.winnyking.watchmouse.ui.input;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.wearable.input.RotaryEncoder;
-import android.support.wearable.view.DismissOverlayView;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -31,11 +28,15 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.constraintlayout.widget.ConstraintLayout.LayoutParams;
+import androidx.fragment.app.Fragment;
+
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.input.KeyboardHelper.Key;
 import com.winnyking.watchmouse.input.KeypadController;
 import com.winnyking.watchmouse.input.KeypadGestureDetector;
+import com.winnyking.watchmouse.input.RotaryEncoder;
 import com.winnyking.watchmouse.ui.onboarding.OnboardingController.ScreenKey;
 import com.winnyking.watchmouse.ui.onboarding.OnboardingRequest;
 import com.google.common.collect.ImmutableMap;
@@ -50,7 +51,7 @@ public class KeypadFragment extends Fragment {
     private TextView swipeName;
     private FrameLayout keypadHint;
     private FrameLayout swipeDismissLayout;
-    private DismissOverlayView dismissOverlay;
+    private FrameLayout dismissOverlay;
     private KeypadGestureDetector gestureDetector;
     private KeypadGestureDetector.GestureListener gestureListener;
     private KeypadController controller;
@@ -111,6 +112,7 @@ public class KeypadFragment extends Fragment {
         keypadHint.setOnTouchListener(this::onTouchHint);
 
         dismissOverlay = root.findViewById(R.id.dismiss_overlay);
+        dismissOverlay.setOnClickListener(v -> getActivity().finish());
 
         swipeDismissLayout = getActivity().findViewById(android.R.id.content);
 
@@ -174,7 +176,7 @@ public class KeypadFragment extends Fragment {
 
         @Override
         public void showDismissOverlay() {
-            dismissOverlay.show();
+            dismissOverlay.setVisibility(View.VISIBLE);
         }
 
         @Override

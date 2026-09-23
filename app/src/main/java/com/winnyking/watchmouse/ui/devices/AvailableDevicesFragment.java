@@ -29,11 +29,13 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.StrictMode;
-import android.preference.Preference;
-import android.preference.PreferenceFragment;
-import android.preference.PreferenceGroup;
 import android.util.Log;
+
 import androidx.annotation.MainThread;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceGroup;
+
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.bluetooth.HidDataSender;
 import com.winnyking.watchmouse.bluetooth.HidDeviceProfile;
@@ -55,7 +57,7 @@ import com.google.common.base.Preconditions;
  * available preference category and appear in the previous fragment bonded preference list. If the
  * bond fails the device will remain in the available preference category.
  */
-public class AvailableDevicesFragment extends PreferenceFragment {
+public class AvailableDevicesFragment extends PreferenceFragmentCompat {
     private static final String TAG = "BluetoothScan";
 
     private static final String KEY_PREF_BLUETOOTH_SCAN = "pref_bluetoothScan";
@@ -76,15 +78,18 @@ public class AvailableDevicesFragment extends PreferenceFragment {
     private PowerManager.WakeLock wakeLock;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
+    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         final StrictMode.ThreadPolicy oldPolicy = StrictMode.allowThreadDiskReads();
         try {
-            addPreferencesFromResource(R.xml.prefs_available_devices);
+            setPreferencesFromResource(R.xml.prefs_available_devices, rootKey);
         } finally {
             StrictMode.setThreadPolicy(oldPolicy);
         }
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
         Context context = getContext();
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();

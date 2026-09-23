@@ -25,10 +25,12 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.wearable.preference.WearablePreferenceActivity;
 
 import androidx.core.splashscreen.SplashScreen;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 
+import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.ui.onboarding.OnboardingController.ScreenKey;
 import com.winnyking.watchmouse.ui.onboarding.OnboardingRequest;
 import com.google.common.collect.ImmutableList;
@@ -36,11 +38,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Main activity that is started from launcher. */
-public class WelcomeActivity extends WearablePreferenceActivity {
+public class WelcomeActivity extends FragmentActivity {
     private OnboardingRequest onboardingRequest;
     private static final List<String> requiredPermissions = ImmutableList.of(
             BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, BLUETOOTH
     );
+
+    /** Replaces the currently displayed preference fragment. */
+    public void startPreferenceFragment(Fragment fragment, boolean addToBackStack) {
+        androidx.fragment.app.FragmentTransaction transaction =
+                getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container, fragment);
+        if (addToBackStack) {
+            transaction.addToBackStack(fragment.getClass().getName());
+        }
+        transaction.commit();
+    }
 
     @Override
     public void onRequestPermissionsResult(
@@ -59,6 +72,7 @@ public class WelcomeActivity extends WearablePreferenceActivity {
     protected void onCreate(Bundle savedInstanceState) {
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_preferences);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             List<String> missingPermissions = new ArrayList<>();

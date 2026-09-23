@@ -24,16 +24,17 @@ import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
-import android.support.wearable.preference.WearableDialogPreference;
-import android.support.wearable.view.AcceptDenyDialog;
 import android.text.TextUtils;
 import android.util.Log;
+
+import androidx.preference.Preference;
+
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.bluetooth.HidDataSender;
 import com.winnyking.watchmouse.bluetooth.HidDeviceProfile;
 
 /** Preference class representing a single bluetooth device. */
-class BluetoothDevicePreference extends WearableDialogPreference {
+class BluetoothDevicePreference extends Preference {
     private static final String TAG = "BluetoothDevicePref";
 
     private final BluetoothDevice device;
@@ -60,10 +61,23 @@ class BluetoothDevicePreference extends WearableDialogPreference {
     }
 
     @Override
-    protected void onPrepareDialogBuilder(AlertDialog.Builder builder) {
-        super.onPrepareDialogBuilder(builder);
+    protected void onClick() {
+        if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
+            // No need to try to connect to devices when we don't support any profiles
+            // on the target device.
+            if (hidDeviceProfile.isProfileSupported(device)) {
+                showDeviceDialog();
+            }
+        } else {
+            // Discovery may be in progress so cancel discovery before attempting to bond.
+            stopDiscovery();
+            device.createBond();
+        }
+    }
 
+    private void showDeviceDialog() {
         connectionState = hidDeviceProfile.getConnectionState(device);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         if (connectionState == BluetoothProfile.STATE_CONNECTED
                 || connectionState == BluetoothProfile.STATE_CONNECTING) {
             builder.setPositiveButton(
@@ -85,22 +99,8 @@ class BluetoothDevicePreference extends WearableDialogPreference {
             builder.setNegativeButton(
                     R.string.pref_bluetooth_forget, (dialog, which) -> requestUnpair());
         }
-    }
 
-    /** Present when the device is available */
-    @Override
-    protected void onClick() {
-        if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
-            // No need to try to connect to devices when we don't support any profiles
-            // on the target device.
-            if (hidDeviceProfile.isProfileSupported(device)) {
-                super.onClick();
-            }
-        } else {
-            // Discovery may be in progress so cancel discovery before attempting to bond.
-            stopDiscovery();
-            device.createBond();
-        }
+        builder.show();
     }
 
     /** Request to unpair and remove the bond */
@@ -110,17 +110,18 @@ class BluetoothDevicePreference extends WearableDialogPreference {
         if (state == BluetoothDevice.BOND_BONDING) {
             BluetoothUtils.cancelBondProcess(device);
         } else if (state != BluetoothDevice.BOND_NONE) {
-            AcceptDenyDialog diag = new AcceptDenyDialog(getContext());
-            diag.setTitle(R.string.pref_bluetooth_unpair);
-            diag.setMessage(device.getName());
-            diag.setPositiveButton(
-                    (dialog, which) -> {
-                        if (!BluetoothUtils.removeBond(device)) {
-                            Log.w(TAG, "Unpair request rejected straight away.");
-                        }
-                    });
-            diag.setNegativeButton((dialog, which) -> {});
-            diag.show();
+            new AlertDialog.Builder(getContext())
+                    .setTitle(R.string.pref_bluetooth_unpair)
+                    .setMessage(device.getName())
+                    .setPositiveButton(
+                            R.string.pref_bluetooth_unpair,
+                            (dialog, which) -> {
+                                if (!BluetoothUtils.removeBond(device)) {
+                                    Log.w(TAG, "Unpair request rejected straight away.");
+                                }
+                            })
+                    .setNegativeButton(android.R.string.cancel, (dialog, which) -> {})
+                    .show();
         }
     }
 
@@ -140,7 +141,6 @@ class BluetoothDevicePreference extends WearableDialogPreference {
         }
 
         setTitle(name);
-        setDialogTitle(name);
         notifyChanged();
     }
 

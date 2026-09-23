@@ -25,11 +25,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.StrictMode;
-import android.preference.Preference;
-import android.preference.PreferenceFragment;
-import android.support.wearable.preference.WearablePreferenceActivity;
 import android.util.Log;
+
 import androidx.annotation.MainThread;
+import androidx.fragment.app.Fragment;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceScreen;
+
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.bluetooth.HidDataSender;
 import com.winnyking.watchmouse.bluetooth.HidDeviceProfile;
@@ -38,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Paired Bluetooth devices list. */
-public class PairedDevicesFragment extends PreferenceFragment {
+public class PairedDevicesFragment extends PreferenceFragmentCompat {
     private static final String TAG = "BluetoothSettings";
 
     private static final int PREFERENCE_ORDER_NORMAL = 100;
@@ -52,15 +55,18 @@ public class PairedDevicesFragment extends PreferenceFragment {
     private boolean scanReceiverRegistered;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
+    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         final StrictMode.ThreadPolicy oldPolicy = StrictMode.allowThreadDiskReads();
         try {
-            addPreferencesFromResource(R.xml.prefs_paired_devices);
+            setPreferencesFromResource(R.xml.prefs_paired_devices, rootKey);
         } finally {
             StrictMode.setThreadPolicy(oldPolicy);
         }
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
         Context context = getContext();
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -99,6 +105,13 @@ public class PairedDevicesFragment extends PreferenceFragment {
         hidDataSender.unregister(context, profileListener);
         context.stopService(new Intent(context, NotificationService.class));
         super.onDestroy();
+    }
+
+    @Override
+    public void onNavigateToScreen(PreferenceScreen preferenceScreen) {
+        Fragment fragment =
+                Fragment.instantiate(getContext(), preferenceScreen.getFragment(), null);
+        ((WelcomeActivity) getActivity()).startPreferenceFragment(fragment, true);
     }
 
     protected void updateBluetoothStateAndDevices() {
@@ -204,7 +217,7 @@ public class PairedDevicesFragment extends PreferenceFragment {
                     }
 
                     if (state == BluetoothProfile.STATE_CONNECTED) {
-                        ((WearablePreferenceActivity) getActivity())
+                        ((WelcomeActivity) getActivity())
                                 .startPreferenceFragment(new ModeSelectFragment(), true);
                     }
                 }

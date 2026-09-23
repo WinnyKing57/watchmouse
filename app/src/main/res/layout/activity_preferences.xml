@@ -14,14 +14,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<resources>
-    <dimen name="settings_list_icon_margin">8dp</dimen>
-    <dimen name="settings_list_icon_size">24dp</dimen>
-    <dimen name="onboarding_icon_size">44dp</dimen>
-    <dimen name="round_button_circle_diameter_large">54dp</dimen>
-    <dimen name="content_text_size">14sp</dimen>
-    <dimen name="info_action_padding">40dp</dimen>
-    <dimen name="content_start_padding">14dp</dimen>
-    <dimen name="content_end_padding">40dp</dimen>
-    <dimen name="splash_screen_icon_size">48dp</dimen>
-</resources>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fragment_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black" />

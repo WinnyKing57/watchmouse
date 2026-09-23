@@ -17,7 +17,6 @@
 package com.winnyking.watchmouse.ui.devices;
 
 import android.app.Dialog;
-import android.app.Fragment;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -32,6 +31,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.fragment.app.Fragment;
 
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.ota.ApkInstaller;
