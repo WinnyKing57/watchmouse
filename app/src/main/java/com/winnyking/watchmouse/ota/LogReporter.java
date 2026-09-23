@@ -44,6 +44,7 @@ public final class LogReporter {
     private static final String TAG = "LogReporter";
     private static final String PREFS = "log_reporter";
     private static final String KEY_CLIENT_ID = "client_id";
+    private static final String POST_PATH = "/log";
 
     public interface Callback {
         void onSuccess(long reportId);
@@ -78,6 +79,7 @@ public final class LogReporter {
     }
 
     private static long sendReport(Context context, String endpoint) throws Exception {
+        String url = endpoint.replaceAll("/+$", "") + POST_PATH;
         JSONObject payload = new JSONObject();
         payload.put("client_id", getClientId(context));
         payload.put("version", BuildConfig.VERSION_NAME);
@@ -90,7 +92,7 @@ public final class LogReporter {
         payload.put("logs", readOwnLogcat());
 
         HttpURLConnection connection =
-                (HttpURLConnection) new URL(endpoint).openConnection();
+                (HttpURLConnection) new URL(url).openConnection();
         connection.setRequestMethod("POST");
         connection.setConnectTimeout(10000);
         connection.setReadTimeout(10000);
