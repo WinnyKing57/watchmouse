@@ -21,8 +21,6 @@
     <uses-feature android:name="android.hardware.sensor.gyroscope" />
     <uses-feature android:name="android.hardware.sensor.accelerometer" />
 
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
@@ -53,7 +51,7 @@
 
         <activity
             android:name="android.support.wearable.preference.WearablePreferenceActivity"
-            android:exported="true"
+            android:exported="false"
             />
 
         <activity
@@ -69,23 +67,23 @@
 
         <activity
             android:name=".ui.devices.BluetoothStateActivity"
-            android:exported="true"
+            android:exported="false"
             />
 
         <activity
             android:name=".ui.input.InputActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/Theme.Wearable.Modal"
             />
 
         <activity
             android:name=".ui.input.CalibrationActivity"
-            android:exported="true"
+            android:exported="false"
             />
 
         <activity
             android:name=".ui.onboarding.OnboardingActivity"
-            android:exported="true"
+            android:exported="false"
             />
 
     </application>

@@ -19,8 +19,6 @@ package com.winnyking.watchmouse.ui.devices;
 import static android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP;
 import static android.os.PowerManager.FULL_WAKE_LOCK;
 
-import android.Manifest;
-import android.Manifest.permission;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
@@ -28,7 +26,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.StrictMode;
@@ -64,7 +61,6 @@ public class AvailableDevicesFragment extends PreferenceFragment {
     private static final String KEY_PREF_BLUETOOTH_SCAN = "pref_bluetoothScan";
     private static final String KEY_PREF_BLUETOOTH_AVAILABLE = "pref_bluetoothAvailable";
 
-    private static final int PERMISSION_REQUEST = 1;
     private static final int DISCOVERABLE_REQUEST = 2;
 
     private BluetoothAdapter bluetoothAdapter;
@@ -104,12 +100,6 @@ public class AvailableDevicesFragment extends PreferenceFragment {
 
         registerStateReceiver();
 
-        if (context.checkSelfPermission(permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(
-                    new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST);
-        }
-
         PowerManager powerManager = getContext().getSystemService(PowerManager.class);
         wakeLock =
                 powerManager.newWakeLock(
@@ -120,17 +110,6 @@ public class AvailableDevicesFragment extends PreferenceFragment {
     public void onResume() {
         super.onResume();
         getView().requestFocus();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(
-            int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == PERMISSION_REQUEST) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-            getActivity().finish();
-        }
     }
 
     @Override
