@@ -9,8 +9,9 @@
 #   Montre portée (ou sur chargeur) et sur le même Wi-Fi que ce PC
 #
 # Usage :
-#   scripts/install-watch.sh                     # machine déjà couplée (adb devices)
-#   scripts/install-watch.sh 192.168.1.42:5555   # adresse IP de la montre
+#   scripts/install-watch.sh                            # montre déjà connectée (seule)
+#   scripts/install-watch.sh 192.168.1.42:5555          # adresse IP de la montre
+#   scripts/install-watch.sh <serial>                   # si plusieurs appareils (ex: téléphone + montre)
 #
 # Si la montre demande un code (Android 11+) :
 #   adb pair 192.168.1.42:39711   puis saisir le code affiché à l'écran
@@ -28,25 +29,45 @@ if [[ ! -f "$APK" ]]; then
 fi
 
 if (( $# >= 1 )); then
-  ADDR="$1"
-  echo ". Connexion à $ADDR ..."
-  adb connect "$ADDR" || true
+  TARGET="$1"
+  echo ". Connexion à $TARGET ..."
+  if [[ "$TARGET" == *:* ]]; then
+    adb connect "$TARGET" || true
+  fi
+else
+  TARGET="$(adb devices | awk 'NR>1 && $2=="device" {print $1}')"
+  if [[ -z "$TARGET" ]]; then
+    echo "ERREUR : aucune montre connectée et autorisée." >&2
+    echo "  - Options développeur > Débogage ADB activé sur la montre ?" >&2
+    echo "  - Autorisation 'Allow USB debugging' acceptée à l'écran ?" >&2
+    echo "  - Montre sur le poignet / chargeur (sinon le Wi-Fi se coupe) ?" >&2
+    exit 1
+  fi
+  if [[ "$(wc -l <<< "$TARGET")" -gt 1 ]]; then
+    echo "Plusieurs appareils détectés. Passe le serial de la montre en 1er argument :" >&2
+    adb devices -l >&2
+    exit 1
+  fi
 fi
 
+if [[ "$TARGET" != *:* ]]; then
+  SERIAL="$TARGET"
+else
+  SERIAL="$TARGET"
+fi
+SERIAL_ARGS=(-s "$SERIAL")
+echo ". Cible : $SERIAL"
+
 echo ". Attente de la montre ..."
-timeout 30 adb wait-for-device || {
-  echo "ERREUR : aucune montre connectée." >&2
-  echo "  - Options développeur > Débogage ADB activé sur la montre ?" >&2
-  echo "  - Montre sur le poignet / chargeur (sinon le Wi-Fi se coupe) ?" >&2
-  echo "  - Même réseau Wi-Fi que ce PC ?" >&2
-  echo "  - IP : Paramètres > Système > À propos > Adresse IP" >&2
+timeout 30 adb "${SERIAL_ARGS[@]}" wait-for-device || {
+  echo "ERREUR : montre cible injoignable." >&2
   exit 1
 }
 
 echo ". Installation de l'APK ..."
-adb install -r "$APK"
+adb "${SERIAL_ARGS[@]}" install -r "$APK"
 
 echo ". Lancement de WatchMouse ..."
-adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null
+adb "${SERIAL_ARGS[@]}" shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null
 
 echo "OK : WatchMouse installé et lancé. Prochaines mises à jour : OTA dans l'app."
