@@ -103,6 +103,30 @@ public final class TcpInputServer {
         return clients.size();
     }
 
+    /**
+     * Sends a JSON command to every connected watch.
+     *
+     * @param message Newline-less JSON message, e.g. <code>{"t":"cmd","a":"update"}</code>.
+     * @return {@code true} if the message was sent to at least one watch.
+     */
+    public boolean sendToAll(String message) {
+        byte[] bytes = (message + "\n").getBytes(StandardCharsets.UTF_8);
+        boolean sent = false;
+        for (Socket client : new java.util.ArrayList<>(clients)) {
+            try {
+                OutputStream out = client.getOutputStream();
+                out.write(bytes);
+                out.flush();
+                sent = true;
+            } catch (IOException e) {
+                closeQuietly(client);
+                clients.remove(client);
+                updateState();
+            }
+        }
+        return sent;
+    }
+
     private void acceptLoop() {
         while (running) {
             try {

@@ -13,4 +13,9 @@
         Lets the WatchMouse watch control this device over Wi-Fi by performing taps, drags
         and swipes.
     </string>
+    <string name="update_hint">Ask the watch to install the latest GitHub release.</string>
+    <string name="update_button">Update the watch</string>
+    <string name="update_sent">Asked the watch to check for updates. Approve the install
+        on the watch screen.</string>
+    <string name="update_no_client">No watch connected — start the receiver first.</string>
 </resources>

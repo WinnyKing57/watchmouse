@@ -25,10 +25,12 @@ Receiver → watch:
 ```
 {"t":"hello","app":"<name>","v":1}
 {"t":"ping"}   every ~5 s — this keeps the watch's stale-connection watchdog alive
+{"t":"cmd","a":"update"}   asks the watch to self-update (its own OTA flow)
 ```
 
-The watch reconnects automatically every 2–30 s and is fire-and-forget: it never
-parses receiver traffic, it just uses it to detect dead connections.
+The watch reconnects automatically every 2–30 s. For `ping`/`hello` it only uses
+the traffic to detect dead connections; `cmd` messages make it act (e.g. run the
+OTA self-update and report via toasts / the package installer UI).
 
 ### Modifier bitmask (`mod`)
 

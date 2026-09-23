@@ -27,6 +27,8 @@ import androidx.lifecycle.ProcessLifecycleOwner;
 import com.winnyking.watchmouse.bluetooth.HidDataSender;
 import com.winnyking.watchmouse.input.SettingsUtil;
 import com.winnyking.watchmouse.input.SettingsUtil.SettingKey;
+import com.winnyking.watchmouse.net.NetDataSender;
+import com.winnyking.watchmouse.ota.RemoteUpdateController;
 import com.winnyking.watchmouse.ui.devices.NotificationService;
 
 public class WatchMouseApp extends Application {
@@ -50,5 +52,6 @@ public class WatchMouseApp extends Application {
         hidDataSender = HidDataSender.getInstance();
         settingsUtil = new SettingsUtil(this);
         ProcessLifecycleOwner.get().getLifecycle().addObserver(lifecycleObserver);
+        NetDataSender.getInstance().registerCommandListener(new RemoteUpdateController(this));
     }
 }

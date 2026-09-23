@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Sends input over a plain TCP socket using newline-delimited JSON.
@@ -58,6 +60,11 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
         void onConnectionChanged(boolean connected);
     }
 
+    /** Notified on the main thread when a receiver asks the watch to do something. */
+    public interface CommandListener {
+        void onRemoteCommand(String command);
+    }
+
     static final class InstanceHolder {
         static final NetDataSender INSTANCE = new NetDataSender();
     }
@@ -70,6 +77,7 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
 
     private final Handler mainThread = new Handler(Looper.getMainLooper());
     private final Set<StatusListener> statusListeners = new CopyOnWriteArraySet<>();
+    private final Set<CommandListener> commandListeners = new CopyOnWriteArraySet<>();
 
     private final Object lock = new Object();
 
@@ -136,6 +144,24 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
     @MainThread
     public void unregisterStatusListener(StatusListener listener) {
         statusListeners.remove(listener);
+    }
+
+    /**
+     * Receives commands pushed by the receiver (e.g. asking the watch to update itself).
+     *
+     * <p>Example message: <code>{"t":"cmd","a":"update"}</code>
+     *
+     * @param listener Called on the main thread.
+     */
+    @MainThread
+    public void registerCommandListener(CommandListener listener) {
+        commandListeners.add(listener);
+    }
+
+    /** @param listener Callback that should no longer receive commands. */
+    @MainThread
+    public void unregisterCommandListener(CommandListener listener) {
+        commandListeners.remove(listener);
     }
 
     private void requestConnect() {
@@ -207,6 +233,7 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
                         Log.i(TAG, "receiver closed the connection");
                         break;
                     }
+                    handleIncoming(line);
                 }
             } catch (IOException e) {
                 Log.w(TAG, "connection problem: " + e.getMessage());
@@ -219,6 +246,33 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
             if (retryMs < RETRY_MAX_MS) {
                 retryMs *= 2;
             }
+        }
+    }
+
+    private void handleIncoming(String line) {
+        if (!line.startsWith("{\"t\":\"cmd\"")) {
+            return;
+        }
+        String command = null;
+        try {
+            JSONObject message = new JSONObject(line);
+            if ("cmd".equals(message.optString("t"))) {
+                command = message.optString("a", "");
+            }
+        } catch (JSONException e) {
+            Log.w(TAG, "malformed command message, ignoring: " + line);
+            return;
+        }
+        if (command == null || command.isEmpty()) {
+            return;
+        }
+        String action = command;
+        mainThread.post(() -> notifyCommand(action));
+    }
+
+    private void notifyCommand(String command) {
+        for (CommandListener listener : commandListeners) {
+            listener.onRemoteCommand(command);
         }
     }
 

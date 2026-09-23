@@ -30,6 +30,22 @@
             android:layout_marginBottom="24dp"
             android:text="@string/accessibility_hint" />
 
+    <TextView
+            android:id="@+id/updateStatusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:layout_marginTop="16dp"
+            android:text="@string/update_hint" />
+
+    <Button
+            android:id="@+id/updateButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:enabled="false"
+            android:text="@string/update_button" />
+
     <Button
             android:id="@+id/toggleButton"
             android:layout_width="wrap_content"

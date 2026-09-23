@@ -33,7 +33,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView statusText;
     private TextView addressText;
     private TextView accessibilityText;
+    private TextView updateStatusText;
     private Button toggleButton;
+    private Button updateButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,10 +45,13 @@ public class MainActivity extends AppCompatActivity {
         statusText = findViewById(R.id.statusText);
         addressText = findViewById(R.id.addressText);
         accessibilityText = findViewById(R.id.accessibilityText);
+        updateStatusText = findViewById(R.id.updateStatusText);
         toggleButton = findViewById(R.id.toggleButton);
+        updateButton = findViewById(R.id.updateButton);
 
         addressText.setText(formatAddressList(getLocalIPv4Addresses(), DEFAULT_PORT));
         toggleButton.setOnClickListener(this::onToggle);
+        updateButton.setOnClickListener(this::onUpdateWatch);
         refreshAccessibilityState();
     }
 
@@ -103,11 +108,21 @@ public class MainActivity extends AppCompatActivity {
     private void updateUi() {
         boolean running = server != null;
         toggleButton.setText(running ? R.string.stop_button : R.string.start_button);
+        updateButton.setEnabled(running);
         statusText.setText(
                 running
                         ? "Listening on port " + server.getPort() + " — clients: "
                                 + server.getClientCount()
                         : getString(R.string.status_stopped));
+    }
+
+    private void onUpdateWatch(View view) {
+        if (server == null) {
+            updateStatusText.setText(R.string.update_no_client);
+            return;
+        }
+        boolean sent = server.sendToAll("{\"t\":\"cmd\",\"a\":\"update\"}");
+        updateStatusText.setText(sent ? R.string.update_sent : R.string.update_no_client);
     }
 
     private void setStatus(String text) {
