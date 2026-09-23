@@ -25,6 +25,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.ArraySet;
 import android.util.Log;
 import androidx.annotation.MainThread;
@@ -78,6 +80,10 @@ public class HidDataSender
 
     @GuardedBy("lock")
     private boolean isAppRegistered;
+
+    @GuardedBy("lock")
+    private int connectAttempts;
+    private final Handler mainThread = new Handler(Looper.getMainLooper());
 
     /**
      * @param hidDeviceApp HID Device App interface.
@@ -185,6 +191,7 @@ public class HidDataSender
             Log.i(TAG, "requestConnect target=" + (device == null ? "null" : device.getAddress())
                     + " appRegistered=" + isAppRegistered);
             waitingForDevice = device;
+            connectAttempts = 0;
             if (!isAppRegistered) {
                 // Request will be fulfilled as soon the as app becomes registered.
                 return;
@@ -247,7 +254,12 @@ public class HidDataSender
                                 onAppStatusChanged(false);
                             }
                         } else {
-                            hidDeviceApp.registerApp(proxy);
+                            boolean registered = hidDeviceApp.registerApp(proxy);
+                            if (registered) {
+                                // Trust the registerApp result instead of waiting for a system
+                                // callback that may never be delivered (WearOS forks).
+                                onAppStatusChanged(true);
+                            }
                         }
                         updateDeviceList();
                         for (ProfileListener listener : listeners) {
@@ -264,6 +276,7 @@ public class HidDataSender
                             // A new connection was established. If we weren't expecting that, it
                             // must be an incoming one. In that case, we shouldn't try to disconnect
                             // from it.
+                            connectAttempts = 0;
                             waitingForDevice = device;
                         } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
                             // If we are disconnected from a device we are waiting to connect to, we
@@ -330,7 +343,25 @@ public class HidDataSender
             if (!connecting && waitingForDevice != null) {
                 Log.i(TAG, "updateDeviceList issuing connect to "
                         + waitingForDevice.getAddress());
-                hidDeviceProfile.connect(waitingForDevice);
+                boolean ok = hidDeviceProfile.connect(waitingForDevice);
+                if (!ok && connectAttempts < 3) {
+                    connectAttempts++;
+                    BluetoothDevice target = waitingForDevice;
+                    Log.w(TAG, "connect returned false; retry " + connectAttempts + "/3 in 2s");
+                    mainThread.postDelayed(
+                            () -> {
+                                synchronized (lock) {
+                                    if (!isAppRegistered || target != waitingForDevice) {
+                                        return;
+                                    }
+                                    updateDeviceList();
+                                }
+                            },
+                            2000);
+                } else if (!ok) {
+                    Log.w(TAG, "give up connecting to " + waitingForDevice.getAddress());
+                    connectAttempts = 0;
+                }
             } else {
                 Log.d(TAG, "updateDeviceList busy=" + connecting
                         + " waiting=" + (waitingForDevice == null ? "none" : waitingForDevice.getAddress()));

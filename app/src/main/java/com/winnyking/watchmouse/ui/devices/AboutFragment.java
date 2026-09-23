@@ -55,7 +55,6 @@ public class AboutFragment extends Fragment {
     private UpdateInfo pendingUpdate;
     private boolean downloading;
     private Button reportButton;
-    private String reportUrl;
 
     @Override
     public View onCreateView(
@@ -154,19 +153,6 @@ public class AboutFragment extends Fragment {
     }
 
     private void onReportButtonClicked() {
-        if (reportUrl != null) {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(reportUrl));
-            try {
-                startActivity(intent);
-            } catch (ActivityNotFoundException e) {
-                Toast.makeText(
-                                getContext(),
-                                R.string.update_checkFailed,
-                                Toast.LENGTH_SHORT)
-                        .show();
-            }
-            return;
-        }
         sendReport();
     }
 
@@ -182,11 +168,6 @@ public class AboutFragment extends Fragment {
                 new LogReporter.Callback() {
                     @Override
                     public void onSuccess(long reportId) {
-                        reportUrl =
-                                BuildConfig.REPORT_ENDPOINT.replaceAll("/+$", "")
-                                        + "/reports/"
-                                        + reportId;
-                        reportButton.setText(R.string.report_open);
                         reportButton.setEnabled(true);
                         updateStatus.setText(getString(R.string.report_sent, reportId));
                     }

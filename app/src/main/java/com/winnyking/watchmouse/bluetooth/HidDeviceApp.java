@@ -118,7 +118,7 @@ public class HidDeviceApp
      * @param inputHost Interface for managing the paired HID Host devices and sending the data.
      */
     @MainThread
-    void registerApp(BluetoothProfile inputHost) {
+    boolean registerApp(BluetoothProfile inputHost) {
         this.inputHost = checkNotNull((BluetoothHidDevice) inputHost);
         BluetoothHidDeviceAppSdpSettings sdp = Constants.SDP_RECORD;
         BluetoothHidDeviceAppQosSettings qos = Constants.QOS_OUT;
@@ -138,16 +138,22 @@ public class HidDeviceApp
                             + " latencyUs=" + qos.getLatency()
                             + " tokenRate=" + qos.getTokenRate()
                             + " pkg=" + BuildConfig.APPLICATION_ID);
-            if (!ok && deviceStateListener != null) {
+            if (ok) {
+                // The system callback may never arrive on some WearOS forks, so keep state in
+                // sync with the registerApp return value directly.
+                registered = true;
+            } else if (deviceStateListener != null) {
                 Log.w(TAG, "registerApp returned false; HID connect will fail");
                 mainThreadHandler.post(() -> deviceStateListener.onAppStatusChanged(false));
             }
+            return ok;
         } catch (RuntimeException e) {
             Log.e(TAG, "registerApp failed with exception", e);
             if (deviceStateListener != null) {
                 mainThreadHandler.post(
                         () -> deviceStateListener.onAppStatusChanged(false));
             }
+            return false;
         }
     }
 

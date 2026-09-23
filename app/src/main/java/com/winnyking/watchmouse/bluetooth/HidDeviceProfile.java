@@ -133,21 +133,22 @@ public class HidDeviceProfile {
      * @param device Device to connect to.
      */
     @MainThread
-    void connect(BluetoothDevice device) {
+    boolean connect(BluetoothDevice device) {
         if (device == null) {
             Log.w(TAG, "connect(null) ignored");
-            return;
+            return false;
         }
         if (service != null && isProfileSupported(device)) {
             boolean ok = service.connect(device);
             Log.i(TAG, "connect(" + describeDevice(device) + ") -> " + ok);
-        } else {
-            Log.w(
-                    TAG,
-                    "connect skipped for " + describeDevice(device)
-                            + " service=" + (service == null ? "null" : "ok")
-                            + " supported=" + isProfileSupported(device));
+            return ok;
         }
+        Log.w(
+                TAG,
+                "connect skipped for " + describeDevice(device)
+                        + " service=" + (service == null ? "null" : "ok")
+                        + " supported=" + isProfileSupported(device));
+        return false;
     }
 
     /**
