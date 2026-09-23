@@ -17,11 +17,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install NDK 26
+      - name: Accept Android SDK licenses + install NDK
         run: |
+          yes | sdkmanager --licenses > /dev/null || true
           sdkmanager "ndk;26.1.10909125"
           yes | sdkmanager --licenses > /dev/null || true
 
@@ -52,9 +50,6 @@ jobs:
           java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses > /dev/null || true
 
       - name: Build companion debug APK
