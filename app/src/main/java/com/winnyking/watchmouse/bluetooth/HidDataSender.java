@@ -182,6 +182,8 @@ public class HidDataSender
     @MainThread
     public void requestConnect(BluetoothDevice device) {
         synchronized (lock) {
+            Log.i(TAG, "requestConnect target=" + (device == null ? "null" : device.getAddress())
+                    + " appRegistered=" + isAppRegistered);
             waitingForDevice = device;
             if (!isAppRegistered) {
                 // Request will be fulfilled as soon the as app becomes registered.
@@ -196,6 +198,17 @@ public class HidDataSender
                     listener.onConnectionStateChanged(device, BluetoothProfile.STATE_CONNECTED);
                 }
             }
+        }
+    }
+
+    /** Structured diagnostics of the HID connection machinery for the bug report. */
+    public String describeStatus() {
+        synchronized (lock) {
+            return "app_registered=" + isAppRegistered
+                    + ", connected=" + (connectedDevice == null ? "none" : connectedDevice.getAddress())
+                    + ", waiting_for=" + (waitingForDevice == null ? "none" : waitingForDevice.getAddress())
+                    + ", listeners=" + listeners.size()
+                    + "; " + hidDeviceProfile.describeStatus();
         }
     }
 
@@ -226,6 +239,7 @@ public class HidDataSender
                 @MainThread
                 public void onServiceStateChanged(BluetoothProfile proxy) {
                     synchronized (lock) {
+                        Log.i(TAG, "ServiceStateChanged proxy=" + (proxy == null ? "null" : "present"));
                         if (proxy == null) {
                             if (isAppRegistered) {
                                 // Service has disconnected before we could unregister the app.
@@ -297,21 +311,29 @@ public class HidDataSender
                 if (device.equals(waitingForDevice) || device.equals(connectedDevice)) {
                     connected = device;
                 } else {
+                    Log.i(TAG, "Disconnecting unexpected device " + device.getAddress());
                     hidDeviceProfile.disconnect(device);
                 }
             }
 
-            // If there is nothing going on, and we want to connect, then do it.
-            if (hidDeviceProfile
+            boolean connecting =
+                    !hidDeviceProfile
                             .getDevicesMatchingConnectionStates(
                                     new int[] {
                                         BluetoothProfile.STATE_CONNECTED,
                                         BluetoothProfile.STATE_CONNECTING,
                                         BluetoothProfile.STATE_DISCONNECTING
                                     })
-                            .isEmpty()
-                    && waitingForDevice != null) {
+                            .isEmpty();
+
+            // If there is nothing going on, and we want to connect, then do it.
+            if (!connecting && waitingForDevice != null) {
+                Log.i(TAG, "updateDeviceList issuing connect to "
+                        + waitingForDevice.getAddress());
                 hidDeviceProfile.connect(waitingForDevice);
+            } else {
+                Log.d(TAG, "updateDeviceList busy=" + connecting
+                        + " waiting=" + (waitingForDevice == null ? "none" : waitingForDevice.getAddress()));
             }
 
             if (connectedDevice == null && connected != null) {

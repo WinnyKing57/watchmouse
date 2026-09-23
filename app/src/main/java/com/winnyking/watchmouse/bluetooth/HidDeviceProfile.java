@@ -65,12 +65,17 @@ public class HidDeviceProfile {
      * @return {@code true} if the HID Host profile is supported, {@code false} otherwise.
      */
     public boolean isProfileSupported(BluetoothDevice device) {
+        if (device == null) {
+            return false;
+        }
         // If a device reports itself as a HID Device, then it isn't a HID Host.
         try {
             ParcelUuid[] uuidArray = device.getUuids();
             if (uuidArray != null) {
                 for (ParcelUuid uuid : uuidArray) {
                     if (HID_UUID.equals(uuid) || HOGP_UUID.equals(uuid)) {
+                        Log.i(TAG, "Filtered out HID-device " + describeDevice(device)
+                                + " (uuid=" + uuid + ")");
                         return false;
                     }
                 }
@@ -129,8 +134,19 @@ public class HidDeviceProfile {
      */
     @MainThread
     void connect(BluetoothDevice device) {
+        if (device == null) {
+            Log.w(TAG, "connect(null) ignored");
+            return;
+        }
         if (service != null && isProfileSupported(device)) {
-            service.connect(device);
+            boolean ok = service.connect(device);
+            Log.i(TAG, "connect(" + describeDevice(device) + ") -> " + ok);
+        } else {
+            Log.w(
+                    TAG,
+                    "connect skipped for " + describeDevice(device)
+                            + " service=" + (service == null ? "null" : "ok")
+                            + " supported=" + isProfileSupported(device));
         }
     }
 
@@ -141,9 +157,55 @@ public class HidDeviceProfile {
      */
     @MainThread
     void disconnect(BluetoothDevice device) {
-        if (service != null && isProfileSupported(device)) {
-            service.disconnect(device);
+        if (device == null) {
+            return;
         }
+        if (service != null && isProfileSupported(device)) {
+            boolean ok = service.disconnect(device);
+            Log.i(TAG, "disconnect(" + describeDevice(device) + ") -> " + ok);
+        }
+    }
+
+    /** Structured Bluetooth/HID diagnostics for the bug report. */
+    public String describeStatus() {
+        StringBuilder sb = new StringBuilder();
+        if (bluetoothAdapter == null) {
+            return "adapter=null";
+        }
+        sb.append("adapter_state=").append(bluetoothAdapter.getState());
+        sb.append(", enabled=").append(bluetoothAdapter.isEnabled());
+        sb.append(", discovering=").append(bluetoothAdapter.isDiscovering());
+        sb.append(", hid_service=").append(service == null ? "null" : "connected");
+        if (service != null) {
+            try {
+                sb.append(", unit=").append(BluetoothProfile.HID_DEVICE);
+                sb.append(", connected_devices=")
+                        .append(service.getConnectedDevices().size());
+                sb.append(", states=[");
+                int[] states = {BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_CONNECTING};
+                for (int i = 0; i < states.length; i++) {
+                    if (i > 0) {
+                        sb.append(',');
+                    }
+                    sb.append(states[i])
+                            .append('=')
+                            .append(service.getDevicesMatchingConnectionStates(new int[] {states[i]}).size());
+                }
+                sb.append(']');
+            } catch (SecurityException e) {
+                sb.append(", query_denied=").append(e.getMessage());
+            }
+        }
+        return sb.toString();
+    }
+
+    private static String describeDevice(BluetoothDevice device) {
+        if (device == null) {
+            return "null";
+        }
+        String name = device.getName();
+        return (name == null ? "" : name + " ") + device.getAddress()
+                + " bond=" + device.getBondState() + " type=" + device.getType();
     }
 
     /**
@@ -177,6 +239,7 @@ public class HidDeviceProfile {
         @Override
         @MainThread
         public void onServiceConnected(int profile, BluetoothProfile proxy) {
+            Log.i(TAG, "HID_DEVICE proxy connected: profile=" + profile + " proxy=" + proxy);
             service = (BluetoothHidDevice) proxy;
             if (serviceStateListener != null) {
                 serviceStateListener.onServiceStateChanged(service);
@@ -188,6 +251,7 @@ public class HidDeviceProfile {
         @Override
         @MainThread
         public void onServiceDisconnected(int profile) {
+            Log.w(TAG, "HID_DEVICE proxy disconnected: profile=" + profile);
             service = null;
             if (serviceStateListener != null) {
                 serviceStateListener.onServiceStateChanged(null);

@@ -72,3 +72,4 @@ secrets.properties
 
 # Local signing keystore
 /keystore/
+__pycache__/

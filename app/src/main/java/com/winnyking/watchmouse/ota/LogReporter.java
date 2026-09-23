@@ -18,13 +18,17 @@ package com.winnyking.watchmouse.ota;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import androidx.core.content.ContextCompat;
+
 import com.winnyking.watchmouse.BuildConfig;
+import com.winnyking.watchmouse.bluetooth.HidDataSender;
 
 import org.json.JSONObject;
 
@@ -37,6 +41,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+
+import static android.Manifest.permission.BLUETOOTH;
+import static android.Manifest.permission.BLUETOOTH_ADVERTISE;
+import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.Manifest.permission.BLUETOOTH_SCAN;
 
 /** Collects device info and logcat, then POSTs them to the report endpoint. */
 public final class LogReporter {
@@ -89,6 +98,9 @@ public final class LogReporter {
         payload.put("sdk", Build.VERSION.SDK_INT);
         payload.put("build", Build.VERSION.INCREMENTAL);
         payload.put("battery", readBattery(context));
+        payload.put("bluetooth", readBluetoothStatus(context));
+        payload.put("permissions", readPermissions(context));
+        payload.put("bonded", readBondedDevices(context));
         payload.put("logs", readOwnLogcat());
 
         HttpURLConnection connection =
@@ -134,6 +146,50 @@ public final class LogReporter {
             return -1;
         }
         return manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+    }
+
+    private static String readBluetoothStatus(Context context) {
+        try {
+            return "HID;" + HidDataSender.getInstance().describeStatus();
+        } catch (Exception e) {
+            return "HID;error:" + e.getMessage();
+        }
+    }
+
+    private static String readPermissions(Context context) {
+        String[] perms = {
+            BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, BLUETOOTH,
+        };
+        StringBuilder sb = new StringBuilder();
+        for (String perm : perms) {
+            boolean granted =
+                    ContextCompat.checkSelfPermission(context, perm)
+                            == PackageManager.PERMISSION_GRANTED;
+            sb.append(perm.replace("android.permission.", "")).append('=')
+                    .append(granted ? "granted" : "denied").append(' ');
+        }
+        return sb.toString().trim();
+    }
+
+    private static String readBondedDevices(Context context) {
+        try {
+            android.bluetooth.BluetoothAdapter adapter =
+                    android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+            if (adapter == null) {
+                return "adapter=null";
+            }
+            StringBuilder sb = new StringBuilder();
+            for (android.bluetooth.BluetoothDevice d : adapter.getBondedDevices()) {
+                String name = d.getName();
+                sb.append(name == null ? "?" : name)
+                        .append('(').append(d.getAddress())
+                        .append(":bond").append(d.getBondState())
+                        .append(":type").append(d.getType()).append(") ");
+            }
+            return sb.length() == 0 ? "none" : sb.toString().trim();
+        } catch (SecurityException e) {
+            return "denied:" + e.getMessage();
+        }
     }
 
     private static String readOwnLogcat() {

@@ -62,31 +62,49 @@ class BluetoothDevicePreference extends Preference {
 
     @Override
     protected void onClick() {
+        String name = device.getName();
+        Log.i(TAG, "onClick " + (name == null ? "" : name) + " " + device.getAddress()
+                + " bond=" + device.getBondState());
         if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
             // No need to try to connect to devices when we don't support any profiles
             // on the target device.
             if (hidDeviceProfile.isProfileSupported(device)) {
                 showDeviceDialog();
+            } else {
+                Log.w(TAG, "Device " + device.getAddress() + " not supported (not a HID host)");
             }
         } else {
             // Discovery may be in progress so cancel discovery before attempting to bond.
             stopDiscovery();
-            device.createBond();
+            boolean requestBond = false;
+            try {
+                requestBond = device.createBond();
+            } catch (SecurityException e) {
+                Log.e(TAG, "createBond blocked by security", e);
+            }
+            Log.i(TAG, "createBond(" + device.getAddress() + ") -> " + requestBond);
         }
     }
 
     private void showDeviceDialog() {
         connectionState = hidDeviceProfile.getConnectionState(device);
+        Log.i(TAG, "showDeviceDialog " + device.getAddress() + " connState=" + connectionState);
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         if (connectionState == BluetoothProfile.STATE_CONNECTED
                 || connectionState == BluetoothProfile.STATE_CONNECTING) {
             builder.setPositiveButton(
                     R.string.pref_bluetooth_disconnect,
-                    (dialog, which) -> hidDataSender.requestConnect(null));
+                    (dialog, which) -> {
+                        Log.i(TAG, "Dialog: disconnect requested");
+                        hidDataSender.requestConnect(null);
+                    });
         } else {
             builder.setPositiveButton(
                     R.string.pref_bluetooth_connect,
-                    (dialog, which) -> hidDataSender.requestConnect(device));
+                    (dialog, which) -> {
+                        Log.i(TAG, "Dialog: connect requested for " + device.getAddress());
+                        hidDataSender.requestConnect(device);
+                    });
         }
 
         if (connectionState == BluetoothProfile.STATE_CONNECTED) {

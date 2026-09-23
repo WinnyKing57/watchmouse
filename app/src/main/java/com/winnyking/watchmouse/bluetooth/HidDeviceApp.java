@@ -20,6 +20,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHidDevice;
+import android.bluetooth.BluetoothHidDeviceAppQosSettings;
+import android.bluetooth.BluetoothHidDeviceAppSdpSettings;
 import android.bluetooth.BluetoothProfile;
 import android.os.Handler;
 import android.os.Looper;
@@ -27,6 +29,7 @@ import android.util.Log;
 import androidx.annotation.BinderThread;
 import androidx.annotation.MainThread;
 import androidx.annotation.WorkerThread;
+import com.winnyking.watchmouse.BuildConfig;
 import javax.annotation.Nullable;
 
 /** Helper class that holds all data about the HID Device's SDP record and wraps data sending. */
@@ -117,8 +120,35 @@ public class HidDeviceApp
     @MainThread
     void registerApp(BluetoothProfile inputHost) {
         this.inputHost = checkNotNull((BluetoothHidDevice) inputHost);
-        this.inputHost.registerApp(
-                Constants.SDP_RECORD, null, Constants.QOS_OUT, Runnable::run, callback);
+        BluetoothHidDeviceAppSdpSettings sdp = Constants.SDP_RECORD;
+        BluetoothHidDeviceAppQosSettings qos = Constants.QOS_OUT;
+        try {
+            boolean ok =
+                    this.inputHost.registerApp(
+                            sdp, null, qos, Runnable::run, callback);
+            Log.i(
+                    TAG,
+                    "registerApp result=" + ok
+                            + " sdpName='" + sdp.getName() + "'"
+                            + " sdpDescription='" + sdp.getDescription() + "'"
+                            + " sdpProvider='" + sdp.getProvider() + "'"
+                            + " subclass=" + sdp.getSubclass()
+                            + " reportDescLen="
+                            + (sdp.getDescriptors() == null ? -1 : sdp.getDescriptors().length)
+                            + " latencyUs=" + qos.getLatency()
+                            + " tokenRate=" + qos.getTokenRate()
+                            + " pkg=" + BuildConfig.APPLICATION_ID);
+            if (!ok && deviceStateListener != null) {
+                Log.w(TAG, "registerApp returned false; HID connect will fail");
+                mainThreadHandler.post(() -> deviceStateListener.onAppStatusChanged(false));
+            }
+        } catch (RuntimeException e) {
+            Log.e(TAG, "registerApp failed with exception", e);
+            if (deviceStateListener != null) {
+                mainThreadHandler.post(
+                        () -> deviceStateListener.onAppStatusChanged(false));
+            }
+        }
     }
 
     /** Unregister the HID Device's SDP record. */
@@ -201,6 +231,8 @@ public class HidDeviceApp
 
     @BinderThread
     private void onConnectionStateChanged(BluetoothDevice device, int state) {
+        Log.i(TAG, "onConnectionStateChanged device="
+                + (device == null ? "null" : device.getAddress()) + " state=" + state);
         mainThreadHandler.post(() -> {
             if (deviceStateListener != null) {
                 deviceStateListener.onConnectionStateChanged(device, state);
@@ -210,6 +242,7 @@ public class HidDeviceApp
 
     @BinderThread
     private void onAppStatusChanged(boolean registered) {
+        Log.i(TAG, "onAppStatusChanged registered=" + registered);
         mainThreadHandler.post(() -> {
             if (deviceStateListener != null) {
                 deviceStateListener.onAppStatusChanged(registered);

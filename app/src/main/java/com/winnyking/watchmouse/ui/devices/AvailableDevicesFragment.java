@@ -139,6 +139,14 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
         if (requestCode != PERMISSION_REQUEST) {
             return;
         }
+        StringBuilder grants = new StringBuilder();
+        for (int i = 0; i < permissions.length; i++) {
+            String p = permissions[i].replace("android.permission.", "");
+            grants.append(p).append('=')
+                    .append(grantResults[i] == PackageManager.PERMISSION_GRANTED ? 'Y' : 'N')
+                    .append(' ');
+        }
+        Log.i(TAG, "Permission result: " + grants.toString().trim());
         if (hasBluetoothPermissions()) {
             initiateScanDevices.setSummary(null);
             startDiscovery();
@@ -296,6 +304,8 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
             initiateScanDevices.setTitle(R.string.pref_bluetoothScan_error);
             initiateScanDevices.setSummary(R.string.pref_bluetoothScan_error);
         }
+        Log.i(TAG, "startDiscovery -> " + started
+                + " (permissions ok, adapter state=" + bluetoothAdapter.getState() + ")");
     }
 
     private void stopDiscovery() {
@@ -371,6 +381,10 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
 
             switch (action == null ? "" : action) {
                 case BluetoothDevice.ACTION_FOUND:
+                    String name = device.getName();
+                    Log.i(TAG, "Device found: " + (name == null ? "?" : name) + " "
+                            + device.getAddress() + " bond=" + device.getBondState()
+                            + " rssi=" + intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE));
                     try {
                         if (hidDeviceProfile.isProfileSupported(device)) {
                             addAvailableDevice(device);
@@ -381,11 +395,14 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
                     }
                     break;
                 case BluetoothAdapter.ACTION_DISCOVERY_STARTED:
+                    Log.i(TAG, "Discovery started");
                     initiateScanDevices.setEnabled(false);
                     initiateScanDevices.setTitle(R.string.pref_bluetoothScan_scanning);
                     initiateScanDevices.setSummary(null);
                     break;
                 case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
+                    Log.i(TAG, "Discovery finished, devices listed="
+                            + availableDevices.getPreferenceCount());
                     initiateScanDevices.setEnabled(true);
                     initiateScanDevices.setTitle(R.string.pref_bluetoothScan);
                     if (availableDevices.getPreferenceCount() == 0) {
