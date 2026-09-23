@@ -18,16 +18,20 @@ package com.winnyking.watchmouse.ui.devices;
 
 import android.app.Dialog;
 import android.app.Fragment;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.winnyking.watchmouse.R;
 import com.winnyking.watchmouse.ota.ApkInstaller;
@@ -73,6 +77,25 @@ public class AboutFragment extends Fragment {
 
         Button license = root.findViewById(R.id.license);
         license.setOnClickListener(v -> createLicenseDialog(getContext()));
+
+        Button changelog = root.findViewById(R.id.changelog);
+        changelog.setOnClickListener(
+                v -> {
+                    Intent intent =
+                            new Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse(
+                                            "https://github.com/WinnyKing57/watchmouse/releases"));
+                    try {
+                        startActivity(intent);
+                    } catch (ActivityNotFoundException e) {
+                        Toast.makeText(
+                                        getContext(),
+                                        R.string.update_checkFailed,
+                                        Toast.LENGTH_SHORT)
+                                .show();
+                    }
+                });
 
         return root;
     }

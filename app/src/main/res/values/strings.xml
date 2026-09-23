@@ -68,6 +68,8 @@
     <string name="pref_about_checkUpdates">Check for updates</string>
     <!-- Status shown while an update check is running. -->
     <string name="pref_about_checkingUpdates">Checking for updates…</string>
+    <!-- Opens the release notes in a browser. -->
+    <string name="pref_about_changelog">Changelog</string>
     <!-- Status shown when a newer version is available. -->
     <string name="update_available">Update v%1$s available</string>
     <!-- Status shown when the app is already up to date. -->

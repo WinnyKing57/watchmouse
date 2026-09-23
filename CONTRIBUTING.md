@@ -1,28 +1,28 @@
-# How to Contribute
+# Contributing to WatchMouse
 
-We'd love to accept your patches and contributions to this project. There are
-just a few small guidelines you need to follow.
+Thanks for your interest in contributing to WatchMouse! Please keep the
+following guidelines in mind.
 
-## Contributor License Agreement
+## Reporting issues
 
-Contributions to this project must be accompanied by a Contributor License
-Agreement. You (or your employer) retain the copyright to your contribution;
-this simply gives us permission to use and redistribute your contributions as
-part of the project. Head over to <https://cla.developers.google.com/> to see
-your current agreements on file or to sign a new one.
+- Use the GitHub issue tracker for this repository.
+- Include the app version shown in the About screen, your watch model and
+  Wear OS version, as well as a description of the problem and steps to
+  reproduce it.
 
-You generally only need to submit a CLA once, so if you've already submitted one
-(even if it was for a different project), you probably don't need to do it
-again.
+## Submitting changes
 
-## Code reviews
+- Fork the repository and work on a feature branch.
+- Keep changes focused on a single concern, with a descriptive commit message.
+- Run `./gradlew :app:assembleDebug` before submitting; the pull request
+  workflow also builds and lints the project automatically.
 
-All submissions, including submissions by project members, require review. We
-use GitHub pull requests for this purpose. Consult
-[GitHub Help](https://help.github.com/articles/about-pull-requests/) for more
-information on using pull requests.
+## Code style
 
-## Community Guidelines
+- Follow the existing code conventions of the project.
+- Do not introduce analytics, telemetry or any data collection.
 
-This project follows [Google's Open Source Community
-Guidelines](https://opensource.google.com/conduct/).
+## License
+
+By contributing you agree that your contributions are licensed under the
+[Apache License 2.0](LICENSE), consistent with the rest of this project.
