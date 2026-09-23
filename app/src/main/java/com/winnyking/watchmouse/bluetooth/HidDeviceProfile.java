@@ -66,13 +66,17 @@ public class HidDeviceProfile {
      */
     public boolean isProfileSupported(BluetoothDevice device) {
         // If a device reports itself as a HID Device, then it isn't a HID Host.
-        ParcelUuid[] uuidArray = device.getUuids();
-        if (uuidArray != null) {
-            for (ParcelUuid uuid : uuidArray) {
-                if (HID_UUID.equals(uuid) || HOGP_UUID.equals(uuid)) {
-                    return false;
+        try {
+            ParcelUuid[] uuidArray = device.getUuids();
+            if (uuidArray != null) {
+                for (ParcelUuid uuid : uuidArray) {
+                    if (HID_UUID.equals(uuid) || HOGP_UUID.equals(uuid)) {
+                        return false;
+                    }
                 }
             }
+        } catch (SecurityException e) {
+            Log.w(TAG, "Permission denied reading device UUIDs; assuming supported", e);
         }
         return true;
     }

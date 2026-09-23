@@ -65,6 +65,7 @@ fastlane/screenshots
 fastlane/test_output
 fastlane/readme.md
 keystore.properties
+secrets.properties
 
 # CMake / native build cache
 .cxx/

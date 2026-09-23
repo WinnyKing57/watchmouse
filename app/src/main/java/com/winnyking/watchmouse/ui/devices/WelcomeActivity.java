@@ -40,6 +40,7 @@ import java.util.List;
 /** Main activity that is started from launcher. */
 public class WelcomeActivity extends FragmentActivity {
     private OnboardingRequest onboardingRequest;
+    private int permissionRequests = 0;
     private static final List<String> requiredPermissions = ImmutableList.of(
             BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, BLUETOOTH
     );
@@ -60,11 +61,19 @@ public class WelcomeActivity extends FragmentActivity {
             int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 1) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            List<String> missingPermissions = findMissingPermissions();
+            if (missingPermissions.isEmpty()) {
                 maybeStartOnboarding();
-                return;
+            } else if (permissionRequests < 2) {
+                requestPermissions(
+                        missingPermissions.toArray(new String[0]), 1);
+            } else {
+                android.widget.Toast.makeText(
+                                this, R.string.pref_bluetoothScan_permission,
+                                android.widget.Toast.LENGTH_LONG)
+                        .show();
+                finish();
             }
-            finish();
         }
     }
 
@@ -75,19 +84,25 @@ public class WelcomeActivity extends FragmentActivity {
         setContentView(R.layout.activity_preferences);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            List<String> missingPermissions = new ArrayList<>();
-            for (String permission : requiredPermissions) {
-                if (checkSelfPermission(permission)  != PackageManager.PERMISSION_GRANTED) {
-                    missingPermissions.add(permission);
-                }
-            }
+            List<String> missingPermissions = findMissingPermissions();
             if (!missingPermissions.isEmpty()) {
+                permissionRequests++;
                 requestPermissions(missingPermissions.toArray(new String[0]), 1);
                 return;
             }
         }
 
         maybeStartOnboarding();
+    }
+
+    private List<String> findMissingPermissions() {
+        List<String> missing = new ArrayList<>();
+        for (String permission : requiredPermissions) {
+            if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                missing.add(permission);
+            }
+        }
+        return missing;
     }
 
     @Override

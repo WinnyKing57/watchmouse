@@ -16,6 +16,10 @@
 
 package com.winnyking.watchmouse.ui.devices;
 
+import static android.Manifest.permission.BLUETOOTH;
+import static android.Manifest.permission.BLUETOOTH_ADVERTISE;
+import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP;
 import static android.os.PowerManager.FULL_WAKE_LOCK;
 
@@ -26,12 +30,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.StrictMode;
 import android.util.Log;
 
 import androidx.annotation.MainThread;
+import androidx.core.content.ContextCompat;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceGroup;
@@ -64,6 +71,7 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
     private static final String KEY_PREF_BLUETOOTH_AVAILABLE = "pref_bluetoothAvailable";
 
     private static final int DISCOVERABLE_REQUEST = 2;
+    private static final int PERMISSION_REQUEST = 1;
 
     private BluetoothAdapter bluetoothAdapter;
     private HidDeviceProfile hidDeviceProfile;
@@ -125,6 +133,23 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
     }
 
     @Override
+    public void onRequestPermissionsResult(
+            int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != PERMISSION_REQUEST) {
+            return;
+        }
+        if (hasBluetoothPermissions()) {
+            initiateScanDevices.setSummary(null);
+            startDiscovery();
+        } else {
+            initiateScanDevices.setTitle(R.string.pref_bluetoothScan_permission);
+            initiateScanDevices.setSummary(R.string.pref_bluetoothScan_error);
+            initiateScanDevices.setEnabled(false);
+        }
+    }
+
+    @Override
     public void onDestroy() {
         wakeLock.release();
         stopDiscovery();
@@ -132,6 +157,14 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
         unregisterStateReceiver();
         hidDataSender.unregister(getContext(), profileListener);
         super.onDestroy();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == DISCOVERABLE_REQUEST) {
+            startDiscovery();
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     protected void initScanDevices(Preference pref) {
@@ -191,6 +224,7 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
         switch (bluetoothAdapter.getState()) {
             case BluetoothAdapter.STATE_OFF:
                 initiateScanDevices.setTitle(R.string.generic_disabled);
+                initiateScanDevices.setSummary(null);
                 initiateScanDevices.setEnabled(false);
                 clearAvailableDevices();
                 break;
@@ -203,6 +237,13 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
             case BluetoothAdapter.STATE_ON:
                 initiateScanDevices.setTitle(R.string.pref_bluetoothScan);
                 initiateScanDevices.setEnabled(true);
+                if (!hasBluetoothPermissions()) {
+                    initiateScanDevices.setTitle(R.string.pref_bluetoothScan_permission);
+                    initiateScanDevices.setSummary(R.string.pref_bluetoothScan_error);
+                    requestPermissions(requiredBluetoothPermissions(), PERMISSION_REQUEST);
+                    return;
+                }
+                initiateScanDevices.setSummary(null);
                 registerScanReceiver();
                 startDiscovery();
                 break;
@@ -210,12 +251,51 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
         }
     }
 
+    private boolean hasBluetoothPermissions() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            return true;
+        }
+        return ContextCompat.checkSelfPermission(getContext(), BLUETOOTH_ADVERTISE)
+                        == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(getContext(), BLUETOOTH_CONNECT)
+                        == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(getContext(), BLUETOOTH_SCAN)
+                        == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(getContext(), BLUETOOTH)
+                        == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private String[] requiredBluetoothPermissions() {
+        return new String[] {BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, BLUETOOTH};
+    }
+
     private void startDiscovery() {
+        if (!hasBluetoothPermissions()) {
+            initiateScanDevices.setTitle(R.string.pref_bluetoothScan_permission);
+            initiateScanDevices.setSummary(R.string.pref_bluetoothScan_error);
+            initiateScanDevices.setEnabled(false);
+            requestPermissions(requiredBluetoothPermissions(), PERMISSION_REQUEST);
+            return;
+        }
+        initiateScanDevices.setSummary(null);
         if (bluetoothAdapter.isDiscovering()) {
             bluetoothAdapter.cancelDiscovery();
         }
-        bluetoothAdapter.startDiscovery();
-        initiateScanDevices.setEnabled(false);
+        boolean started;
+        try {
+            started = bluetoothAdapter.startDiscovery();
+        } catch (SecurityException e) {
+            Log.e(TAG, "startDiscovery blocked", e);
+            started = false;
+        }
+        if (started) {
+            initiateScanDevices.setEnabled(false);
+            initiateScanDevices.setTitle(R.string.pref_bluetoothScan_scanning);
+        } else {
+            initiateScanDevices.setEnabled(true);
+            initiateScanDevices.setTitle(R.string.pref_bluetoothScan_error);
+            initiateScanDevices.setSummary(R.string.pref_bluetoothScan_error);
+        }
     }
 
     private void stopDiscovery() {
@@ -235,7 +315,11 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
         intentFilter.addAction(BluetoothDevice.ACTION_FOUND);
         intentFilter.addAction(BluetoothDevice.ACTION_NAME_CHANGED);
         intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-        getContext().registerReceiver(scanReceiver = new BluetoothScanReceiver(), intentFilter);
+        getContext()
+                .registerReceiver(
+                        scanReceiver = new BluetoothScanReceiver(),
+                        intentFilter,
+                        android.content.Context.RECEIVER_NOT_EXPORTED);
 
         if (!BluetoothUtils.setScanMode(
                 bluetoothAdapter, BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE, 0)) {
@@ -256,7 +340,11 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
     private void registerStateReceiver() {
         Preconditions.checkArgument(stateReceiver == null);
         final IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        getContext().registerReceiver(stateReceiver = new BluetoothStateReceiver(), intentFilter);
+        getContext()
+                .registerReceiver(
+                        stateReceiver = new BluetoothStateReceiver(),
+                        intentFilter,
+                        android.content.Context.RECEIVER_NOT_EXPORTED);
     }
 
     private void unregisterStateReceiver() {
@@ -276,21 +364,33 @@ public class AvailableDevicesFragment extends PreferenceFragmentCompat {
             }
 
             final String action = intent.getAction();
-            final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            final BluetoothDevice device =
+                    android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU
+                            ? intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class)
+                            : intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
             switch (action == null ? "" : action) {
                 case BluetoothDevice.ACTION_FOUND:
-                    if (hidDeviceProfile.isProfileSupported(device)) {
-                        addAvailableDevice(device);
+                    try {
+                        if (hidDeviceProfile.isProfileSupported(device)) {
+                            addAvailableDevice(device);
+                            initiateScanDevices.setSummary(null);
+                        }
+                    } catch (SecurityException e) {
+                        Log.w(TAG, "Permission denied while inspecting device", e);
                     }
                     break;
                 case BluetoothAdapter.ACTION_DISCOVERY_STARTED:
                     initiateScanDevices.setEnabled(false);
                     initiateScanDevices.setTitle(R.string.pref_bluetoothScan_scanning);
+                    initiateScanDevices.setSummary(null);
                     break;
                 case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
                     initiateScanDevices.setEnabled(true);
                     initiateScanDevices.setTitle(R.string.pref_bluetoothScan);
+                    if (availableDevices.getPreferenceCount() == 0) {
+                        initiateScanDevices.setSummary(R.string.pref_bluetoothScan_none);
+                    }
                     break;
                 case BluetoothDevice.ACTION_BOND_STATE_CHANGED:
                     updateAvailableDevice(device);

@@ -31,6 +31,12 @@
     <string name="pref_bluetoothScan">Scan for nearby devices</string>
     <!-- Message to be shown during the bluetooth device discovery process. -->
     <string name="pref_bluetoothScan_scanning">Scanning for nearby devices…</string>
+    <!-- Message shown when a scan finishes without finding devices. -->
+    <string name="pref_bluetoothScan_none">No devices found. Keep the target discoverable and scan again.</string>
+    <!-- Message shown when the Bluetooth scan could not be started. -->
+    <string name="pref_bluetoothScan_error">Unable to start scan</string>
+    <!-- Message shown when Bluetooth permissions are missing for scanning. -->
+    <string name="pref_bluetoothScan_permission">Bluetooth permission required</string>
     <!-- Action to connect to a paired Bluetooth device. -->
     <string name="pref_bluetooth_connect">Connect</string>
     <!-- Action to disconnect from a connected paired Bluetooth device. -->
@@ -86,6 +92,16 @@
     <string name="update_installFailed">Update failed</string>
     <!-- Status shown after a successful update installation. -->
     <string name="update_installedSuccess">Update installed</string>
+    <!-- Button that sends the bug report to the WatchMouse GitHub tracker. -->
+    <string name="pref_about_sendReport">Send bug report</string>
+    <!-- Status shown while the bug report is being prepared. -->
+    <string name="report_preparing">Preparing report…</string>
+    <!-- Status shown after the bug report issue was created, with its number. -->
+    <string name="report_sent">Report sent (#%1$d)</string>
+    <!-- Button label to reopen the created report issue. -->
+    <string name="report_open">Open report</string>
+    <!-- Status shown when the bug report could not be sent, with reason. -->
+    <string name="report_failed">Report failed: %1$s</string>
 
     <!-- Title at the top of the input mode selection -->
     <string name="pref_mode_select">Input Mode</string>

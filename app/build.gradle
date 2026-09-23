@@ -6,17 +6,28 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+def reportProperties = new Properties()
+def reportPropertiesFile = rootProject.file("secrets.properties")
+if (reportPropertiesFile.exists()) {
+    reportProperties.load(new FileInputStream(reportPropertiesFile))
+}
+
 android {
     namespace 'com.winnyking.watchmouse'
     compileSdk 35
     ndkVersion "26.1.10909125"
 
+    buildFeatures {
+        buildConfig true
+    }
+
     defaultConfig {
         applicationId "com.winnyking.watchmouse"
         minSdkVersion 34
         targetSdkVersion 34
-        versionCode 40
-        versionName "1.27"
+        versionCode 41
+        versionName "1.28"
+        buildConfigField "String", "GITHUB_ISSUES_TOKEN", "\"${reportProperties.getProperty("githubToken", "")}\""
         externalNativeBuild {
             cmake {
                 arguments "-DANDROID_ARM_NEON=TRUE", "-DANDROID_TOOLCHAIN=clang"
