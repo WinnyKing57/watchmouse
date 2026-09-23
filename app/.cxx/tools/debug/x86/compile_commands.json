@@ -1,0 +1,82 @@
+[
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/orientation_tracker.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/orientation_tracker.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/orientation_tracker.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/sensor_fusion_jni.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensor_fusion_jni.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensor_fusion_jni.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/sensors/gyroscope_bias_estimator.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/gyroscope_bias_estimator.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/gyroscope_bias_estimator.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/sensors/lowpass_filter.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/lowpass_filter.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/lowpass_filter.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/sensors/mean_filter.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/mean_filter.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/mean_filter.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/sensors/median_filter.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/median_filter.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/median_filter.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/sensors/pose_prediction.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/pose_prediction.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/pose_prediction.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/sensors/sensor_fusion_ekf.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/sensor_fusion_ekf.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/sensor_fusion_ekf.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/sensors/android/device_accelerometer_sensor.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/android/device_accelerometer_sensor.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/android/device_accelerometer_sensor.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/sensors/android/device_gyroscope_sensor.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/android/device_gyroscope_sensor.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/android/device_gyroscope_sensor.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/sensors/android/sensor_event_producer.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/android/sensor_event_producer.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/sensors/android/sensor_event_producer.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/util/matrix_3x3.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/util/matrix_3x3.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/util/matrix_3x3.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/util/matrix_4x4.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/util/matrix_4x4.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/util/matrix_4x4.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/util/matrixutils.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/util/matrixutils.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/util/matrixutils.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/util/rotation.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/util/rotation.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/util/rotation.cc"
+},
+{
+  "directory": "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86",
+  "command": "/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android34 --sysroot=/home/winny/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dsensor_fusion_jni_EXPORTS -I/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -Os -ffunction-sections -fdata-sections -fvisibility=hidden -fno-limit-debug-info  -fPIC -o CMakeFiles/sensor_fusion_jni.dir/util/vectorutils.cc.o -c /home/winny/development/gearmouse/wearmouse/app/src/main/cpp/util/vectorutils.cc",
+  "file": "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/util/vectorutils.cc"
+}
+]

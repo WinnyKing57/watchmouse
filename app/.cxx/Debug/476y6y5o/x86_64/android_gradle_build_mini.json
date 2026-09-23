@@ -1,0 +1,27 @@
+{
+  "buildFiles": [
+    "/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/winny/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/winny/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "sensor_fusion_jni::@6890427a1f51a3e7e1df": {
+      "artifactName": "sensor_fusion_jni",
+      "abi": "x86_64",
+      "output": "/home/winny/development/gearmouse/wearmouse/app/build/intermediates/cxx/Debug/476y6y5o/obj/x86_64/libsensor_fusion_jni.so",
+      "runtimeFiles": []
+    }
+  }
+}

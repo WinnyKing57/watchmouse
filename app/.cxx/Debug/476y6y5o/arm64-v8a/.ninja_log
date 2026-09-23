@@ -1,0 +1,18 @@
+# ninja log v5
+8	606	1790180285049590939	CMakeFiles/sensor_fusion_jni.dir/util/matrix_4x4.cc.o	74ff4fe219fe892b
+13	629	1790180285077600642	CMakeFiles/sensor_fusion_jni.dir/util/vectorutils.cc.o	bcb5c32f2be30de9
+21	638	1790180285097607573	CMakeFiles/sensor_fusion_jni.dir/util/rotation.cc.o	417de3d8922de41d
+1	642	1790180285101608959	CMakeFiles/sensor_fusion_jni.dir/sensors/lowpass_filter.cc.o	d35fe50dbfc564d2
+1	765	1790180285221650543	CMakeFiles/sensor_fusion_jni.dir/sensors/mean_filter.cc.o	ef3dd2da417b1918
+1	770	1790180285225651929	CMakeFiles/sensor_fusion_jni.dir/sensors/pose_prediction.cc.o	123ff57022057d38
+6	813	1790180285269667176	CMakeFiles/sensor_fusion_jni.dir/util/matrix_3x3.cc.o	13ccd4bb467c326e
+0	825	1790180285281671334	CMakeFiles/sensor_fusion_jni.dir/sensor_fusion_jni.cc.o	27da6ba9357985eb
+5	944	1790180285401712918	CMakeFiles/sensor_fusion_jni.dir/sensors/android/sensor_event_producer.cc.o	66d3b55d0a7b8116
+5	997	1790180285453730938	CMakeFiles/sensor_fusion_jni.dir/sensors/android/device_gyroscope_sensor.cc.o	1aff312f2d700b0a
+1	1008	1790180285465735096	CMakeFiles/sensor_fusion_jni.dir/sensors/gyroscope_bias_estimator.cc.o	60983c1c94f8c148
+2	1017	1790180285473737869	CMakeFiles/sensor_fusion_jni.dir/util/matrixutils.cc.o	cd72d013d988958
+2	1020	1790180285477739255	CMakeFiles/sensor_fusion_jni.dir/sensors/android/device_accelerometer_sensor.cc.o	359264ed69083330
+1	1067	1790180285525755888	CMakeFiles/sensor_fusion_jni.dir/sensors/median_filter.cc.o	17aea19984a4ee24
+2	1129	1790180285581775294	CMakeFiles/sensor_fusion_jni.dir/sensors/sensor_fusion_ekf.cc.o	4728fb70da77f93
+0	1215	1790180285673807175	CMakeFiles/sensor_fusion_jni.dir/orientation_tracker.cc.o	c20cbc7cd5535fa
+1215	1243	1790180285705818264	/home/winny/development/gearmouse/wearmouse/app/build/intermediates/cxx/Debug/476y6y5o/obj/arm64-v8a/libsensor_fusion_jni.so	739442c89708dc01
