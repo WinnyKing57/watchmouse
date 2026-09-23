@@ -68,3 +68,6 @@ keystore.properties
 
 # CMake / native build cache
 .cxx/
+
+# Local signing keystore
+/keystore/

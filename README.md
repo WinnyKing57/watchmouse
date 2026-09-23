@@ -13,6 +13,30 @@ You can use it to connect with pretty much any laptop or desktop computer,
 running Windows, Linux, Chrome OS, Mac OSX, Android TV, without any additional
 software, as long as it has a Bluetooth receiver.
 
+## Installation
+
+The latest signed build is published on the [releases page](https://github.com/WinnyKing57/watchmouse/releases).
+
+The **first** launch requires a one-time ADB sideload (the watch has no browser to
+download an APK). After that, all updates are delivered over-the-air by the built-in
+OTA updater (À propos screen -> Check for updates), no cable needed.
+
+1. On the watch: *Settings > System > About*, tap the build number 7 times to
+   enable Developer options.
+2. *Developer options > ADB debugging* on (and *Debug over Wi-Fi* if offered).
+3. Keep the watch on your wrist (or on the charger) and on the same Wi-Fi as your
+   computer, otherwise Wi-Fi switches off.
+4. Get the IP from *Settings > System > About > IP address*.
+5. From this repo:
+   ```
+   scripts/install-watch.sh 192.168.1.42:5555
+   ```
+   If the watch asks for a code (Android 11+): `adb pair 192.168.1.42:39711`
+   first, enter the code shown on screen, then re-run the install script.
+
+Signing note: releases are signed with a production keystore; the OTA updater
+will only accept later builds signed with the same key.
+
 ## How to use this app
 
 1. After launch, the first thing you see is the paired devices list.
