@@ -1,1 +1,0 @@
-/home/winny/development/gearmouse/wearmouse/app/src/main/cpp/CMakeLists.txt

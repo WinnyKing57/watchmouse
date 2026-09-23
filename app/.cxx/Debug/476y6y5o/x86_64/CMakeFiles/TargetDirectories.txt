@@ -1,3 +1,0 @@
-/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86_64/CMakeFiles/sensor_fusion_jni.dir
-/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86_64/CMakeFiles/edit_cache.dir
-/home/winny/development/gearmouse/wearmouse/app/.cxx/Debug/476y6y5o/x86_64/CMakeFiles/rebuild_cache.dir
