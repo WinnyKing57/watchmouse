@@ -41,6 +41,8 @@ public class MouseController {
         void onDeviceDisconnected();
     }
 
+    private final SendRouter sendRouter;
+
     private final HidDataSender.ProfileListener profileListener =
             new HidDataSender.ProfileListener() {
                 @Override
@@ -66,15 +68,14 @@ public class MouseController {
 
     private final SendRouter.StatusListener transportStatus =
             () -> {
-                if (sendRouter.isNetworkMode()) {
-                    ui.onDeviceDisconnected();
+                if (MouseController.this.sendRouter.isNetworkMode()) {
+                    MouseController.this.ui.onDeviceDisconnected();
                 }
             };
 
     private final Ui ui;
     private final SettingsUtil settings;
     private final HidDataSender hidDataSender;
-    private final SendRouter sendRouter;
     private final MouseSensorListener sensorListener;
     private final SensorServiceConnection connection;
 

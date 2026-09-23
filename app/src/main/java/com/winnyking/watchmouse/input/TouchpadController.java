@@ -46,6 +46,8 @@ public class TouchpadController {
         void onDeviceDisconnected();
     }
 
+    private final SendRouter sendRouter;
+
     private final HidDataSender.ProfileListener profileListener =
             new HidDataSender.ProfileListener() {
                 @Override
@@ -71,13 +73,12 @@ public class TouchpadController {
 
     private final SendRouter.StatusListener transportStatus =
             () -> {
-                if (sendRouter.isNetworkMode()) {
-                    ui.onDeviceDisconnected();
+                if (TouchpadController.this.sendRouter.isNetworkMode()) {
+                    TouchpadController.this.ui.onDeviceDisconnected();
                 }
             };
 
     private final Ui ui;
-    private final SendRouter sendRouter;
     private final List<ButtonEvent> pendingEvents = new ArrayList<>();
 
     private float dX;

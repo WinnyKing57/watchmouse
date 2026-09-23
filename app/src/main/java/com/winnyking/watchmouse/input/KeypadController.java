@@ -89,6 +89,8 @@ public class KeypadController {
         String getKeyName(int scanCode);
     }
 
+    private final SendRouter sendRouter;
+
     private final int[] keyState = {NONE, NONE};
 
     private final HidDataSender.ProfileListener profileListener =
@@ -116,15 +118,14 @@ public class KeypadController {
 
     private final SendRouter.StatusListener transportStatus =
             () -> {
-                if (sendRouter.isNetworkMode()) {
-                    ui.onDeviceDisconnected();
+                if (KeypadController.this.sendRouter.isNetworkMode()) {
+                    KeypadController.this.ui.onDeviceDisconnected();
                 }
             };
 
     private final Ui ui;
     private final KeyNameProvider keyNameProvider;
     private final SettingsUtil settings;
-    private final SendRouter sendRouter;
     private final KeyboardHelper keyboardHelper;
 
     private int touchArea;

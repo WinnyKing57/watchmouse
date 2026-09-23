@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -146,7 +147,7 @@ public final class TcpInputServer {
         }
     }
 
-    private void handleLine(String line) {
+    private void handleLine(String line) throws JSONException {
         JSONObject json = new JSONObject(line);
         String type = json.optString("t");
         switch (type) {

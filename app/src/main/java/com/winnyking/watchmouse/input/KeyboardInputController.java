@@ -42,6 +42,8 @@ public class KeyboardInputController {
         void onDeviceDisconnected();
     }
 
+    private final SendRouter sendRouter;
+
     private final HidDataSender.ProfileListener profileListener =
             new HidDataSender.ProfileListener() {
                 @Override
@@ -67,14 +69,13 @@ public class KeyboardInputController {
 
     private final SendRouter.StatusListener transportStatus =
             () -> {
-                if (sendRouter.isNetworkMode()) {
-                    ui.onDeviceDisconnected();
+                if (KeyboardInputController.this.sendRouter.isNetworkMode()) {
+                    KeyboardInputController.this.ui.onDeviceDisconnected();
                 }
             };
 
     private final Ui ui;
     private final HidDataSender hidDataSender;
-    private final SendRouter sendRouter;
     private final KeyboardHelper keyboardHelper;
 
     /** @param ui Callback for receiving the UI updates. */
