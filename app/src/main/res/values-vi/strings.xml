@@ -15,7 +15,7 @@
   limitations under the License.
   -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name">WearMouse</string>
+    <string name="app_name">WatchMouse</string>
     <string name="please_wait">Vui lòng đợi…</string>
     <string name="generic_disabled">ĐÃ TẮT</string>
     <string name="pref_bluetooth">Thiết bị được ghép nối</string>

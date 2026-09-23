@@ -37,7 +37,7 @@
         android:icon="@drawable/ic_ms_keyboard"
         android:persistent="false" />
     <Preference
-        android:fragment="com.ginkage.wearmouse.ui.input.InputSettingsFragment"
+        android:fragment="com.winnyking.watchmouse.ui.input.InputSettingsFragment"
         android:title="@string/pref_inputSettings"
         android:icon="@drawable/ic_bt_ellipsis"
         android:persistent="false" />

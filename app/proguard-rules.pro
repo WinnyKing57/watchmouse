@@ -7,14 +7,14 @@
 -dontwarn org.checkerframework.checker.**
 -dontwarn afu.org.checkerframework.checker.**
 
--keep class com.ginkage.wearmouse.ui.devices.AvailableDevicesFragment {}
--keep class com.ginkage.wearmouse.ui.devices.AboutFragment {}
--keep class com.ginkage.wearmouse.ui.input.InputSettingsFragment {}
+-keep class com.winnyking.watchmouse.ui.devices.AvailableDevicesFragment {}
+-keep class com.winnyking.watchmouse.ui.devices.AboutFragment {}
+-keep class com.winnyking.watchmouse.ui.input.InputSettingsFragment {}
 
 -keepclasseswithmembers class * {
     native <methods>;
 }
 
--keepclasseswithmembers class com.ginkage.wearmouse.sensors.SensorFusionJni {
+-keepclasseswithmembers class com.winnyking.watchmouse.sensors.SensorFusionJni {
     *;
 }

@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace 'com.ginkage.wearmouse'
+    namespace 'com.winnyking.watchmouse'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.ginkage.wearmouse"
+        applicationId "com.winnyking.watchmouse"
         minSdkVersion 34
         targetSdkVersion 34
         versionCode 40

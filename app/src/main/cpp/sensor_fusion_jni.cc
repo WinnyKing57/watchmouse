@@ -21,7 +21,7 @@
 
 #define JNI_METHOD(return_type, method_name) \
   JNIEXPORT return_type JNICALL              \
-      Java_com_ginkage_wearmouse_sensors_SensorFusionJni_##method_name
+      Java_com_winnyking_watchmouse_sensors_SensorFusionJni_##method_name
 
 namespace {
 
@@ -39,7 +39,7 @@ public:
     env->GetJavaVM(&jvm_);
     obj_ = env->NewGlobalRef(obj);
 
-    jclass clazz = env->FindClass("com/ginkage/wearmouse/sensors/SensorFusionJni");
+    jclass clazz = env->FindClass("com/winnyking/watchmouse/sensors/SensorFusionJni");
     method_on_orientation_ = env->GetMethodID(clazz, "onOrientation", "()V");
     field_orientation_ = env->GetFieldID(clazz, "orientation", "[D");
   }

@@ -21,12 +21,12 @@
             android:title="@string/pref_bluetoothAvailable"
             android:icon="@drawable/ic_bt_search"
             android:order="200"
-            android:fragment="com.ginkage.wearmouse.ui.devices.AvailableDevicesFragment" />
+            android:fragment="com.winnyking.watchmouse.ui.devices.AvailableDevicesFragment" />
     <Preference
             android:key="pref_appAbout"
             android:title="@string/pref_appAbout"
             android:icon="@drawable/ic_info"
             android:order="300"
             android:persistent="false"
-            android:fragment="com.ginkage.wearmouse.ui.devices.AboutFragment" />
+            android:fragment="com.winnyking.watchmouse.ui.devices.AboutFragment" />
 </PreferenceScreen>

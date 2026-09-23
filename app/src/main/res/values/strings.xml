@@ -16,7 +16,7 @@
   -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- Name of the app in launcher. -->
-    <string name="app_name">WearMouse</string>
+    <string name="app_name">WatchMouse</string>
 
     <!-- Prompt to wait for Bluetooth to turn on. -->
     <string name="please_wait">Please wait…</string>

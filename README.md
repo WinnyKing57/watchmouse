@@ -1,4 +1,4 @@
-# WearMouse
+# WatchMouse
 
 A fork of [ginkage/wearmouse](https://github.com/ginkage/wearmouse), adapted to control a computer, tablet or Android phone from a Wear OS watch.
 
