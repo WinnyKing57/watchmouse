@@ -1,0 +1,47 @@
+#!/bin/sh
+# WatchMouse Host launcher: shows the service status, the address the watch
+# must connect to, and the live log. Starts the service if it is down.
+SERVICE="watchmouse-host"
+
+if ! systemctl is-active --quiet "$SERVICE" 2>/dev/null; then
+  systemctl start "$SERVICE" >/dev/null 2>&1 || true
+fi
+
+IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{print $7; exit}')"
+[ -z "$IP" ] && IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
+ADDR="TCP ${IP:-localhost}:8888"
+
+command -v notify-send >/dev/null 2>&1 && \
+  notify-send -i watchmouse-host "WatchMouse Host" "Service: $(systemctl is-active "$SERVICE" 2>/dev/null || echo inconnu) — $ADDR" 2>/dev/null || true
+
+TERM=""
+for t in konsole gnome-terminal xfce4-terminal x-terminal-emulator; do
+  if command -v "$t" >/dev/null 2>&1; then TERM="$t"; break; fi
+done
+
+if [ -z "$TERM" ]; then
+  echo "WatchMouse Host — aucune interface (service: $(systemctl is-active "$SERVICE" 2>/dev/null))"
+  echo "Adresse a entrer dans la montre : $ADDR"
+  exit 0
+fi
+
+CMD="
+echo '=== WatchMouse Host ===';
+echo 'Adresse a entrer dans la montre : $ADDR';
+echo 'Service : \$(systemctl is-active $SERVICE 2>/dev/null)';
+echo;
+systemctl status --no-pager $SERVICE --lines=0 2>/dev/null | sed -n '1,8p';
+echo;
+echo '=== Journal (Ctrl+C pour quitter) ===';
+if journalctl -u $SERVICE -n 20 -f 2>/tmp/watchmouse-journal-err; then :; else
+  echo 'Lecture du journal non autorisee, essai avec sudo:';
+  sudo journalctl -u $SERVICE -n 20 -f;
+fi
+"
+
+case "$TERM" in
+  konsole) exec konsole -e sh -c "$CMD" ;;
+  gnome-terminal) exec gnome-terminal -- sh -c "$CMD" ;;
+  xfce4-terminal) exec xfce4-terminal -e sh -c "$CMD" ;;
+  *) exec x-terminal-emulator -e sh -c "$CMD" ;;
+esac

@@ -15,7 +15,7 @@ fi
 DEB_NAME="${PKG_NAME}_${VERSION}_all.deb"
 
 rm -rf "$BUILD_DIR"
-mkdir -p "$PKG_DIR/DEBIAN" "$PKG_DIR/opt/watchmouse-host" "$PKG_DIR/usr/lib/systemd/system" "$PKG_DIR/usr/share/icons/hicolor/256x256/apps" "$PKG_DIR/usr/share/applications"
+mkdir -p "$PKG_DIR/DEBIAN" "$PKG_DIR/opt/watchmouse-host" "$PKG_DIR/usr/bin" "$PKG_DIR/usr/lib/systemd/system" "$PKG_DIR/usr/share/icons/hicolor/256x256/apps" "$PKG_DIR/usr/share/applications"
 
 # Control
 sed "s/__VERSION__/$VERSION/" "$DIR/debian/control" > "$PKG_DIR/DEBIAN/control"
@@ -32,6 +32,10 @@ chmod 644 "$PKG_DIR/opt/watchmouse-host/watchmouse_host.py"
 cp "$DIR/watchmouse_host.service" "$PKG_DIR/usr/lib/systemd/system/watchmouse-host.service"
 chmod 644 "$PKG_DIR/usr/lib/systemd/system/watchmouse-host.service"
 
+# Launcher (opens a terminal showing status + log + address to use)
+cp "$DIR/watchmouse-host-launcher" "$PKG_DIR/usr/bin/watchmouse-host-launcher"
+chmod 755 "$PKG_DIR/usr/bin/watchmouse-host-launcher"
+
 # Icon (same as the watch app, 256x256 for the hicolor theme)
 if [[ -f "$DIR/watchmouse-host.png" ]]; then
   cp "$DIR/watchmouse-host.png" "$PKG_DIR/usr/share/icons/hicolor/256x256/apps/watchmouse-host.png"
@@ -39,17 +43,17 @@ if [[ -f "$DIR/watchmouse-host.png" ]]; then
 fi
 
 # Desktop entry
-cat > "$PKG_DIR/usr/share/applications/watchmouse-host.desktop" <<'EOF'
+cat > "$PKG_DIR/usr/share/applications/watchmouse-host.desktop" <<'ENDDESKTOP'
 [Desktop Entry]
 Type=Application
 Name=WatchMouse Host
 Comment=Receive WatchMouse input from Wear OS over TCP (uinput)
-Exec=true
+Exec=watchmouse-host-launcher
 Icon=watchmouse-host
 Terminal=false
 Categories=Utility;
-StartupNotify=false
-EOF
+StartupNotify=true
+ENDDESKTOP
 chmod 644 "$PKG_DIR/usr/share/applications/watchmouse-host.desktop"
 
 # Build deb (root-owned payload, works even when run as a non-root user)
