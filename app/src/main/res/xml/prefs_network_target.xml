@@ -33,6 +33,13 @@
             android:summary="@string/pref_netPort_summary"
             android:persistent="false"
             android:inputType="number" />
+    <androidx.preference.EditTextPreference
+            android:key="pref_net_pin"
+            android:title="@string/pref_netPin"
+            android:summary="@string/pref_netPin_summary"
+            android:persistent="false"
+            android:inputType="textPassword"
+            android:digits="0123456789" />
     <Preference
             android:key="pref_net_status"
             android:title="@string/pref_netStatus"

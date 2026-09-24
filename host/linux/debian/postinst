@@ -1,6 +1,20 @@
 #!/bin/sh
 set -e
 
+# First configuration: generate a random PIN shared by the PC host and the watch.
+ENV_FILE=/etc/watchmouse-host.env
+if [ ! -f "$ENV_FILE" ]; then
+  PIN="$( (head -c 4 /dev/urandom | od -An -tx1) 2>/dev/null | tr -d ' \n' | cut -c1-8 )"
+  [ -z "$PIN" ] && PIN="$(openssl rand -hex 4 2>/dev/null || echo 1234)"
+  printf 'WATCHMOUSE_PIN=%s\n' "$PIN" > "$ENV_FILE"
+  chmod 600 "$ENV_FILE"
+  echo
+  echo "WatchMouse Host: chose a random pairing PIN for you:"
+  echo "    $PIN"
+  echo "Enter this PIN in the watch app (network transport -> PIN)."
+  echo
+fi
+
 if [ -d /run/systemd/system ]; then
   systemctl daemon-reload >/dev/null 2>&1 || true
   systemctl enable watchmouse-host >/dev/null 2>&1 || true

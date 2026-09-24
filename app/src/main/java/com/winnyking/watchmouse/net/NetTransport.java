@@ -29,6 +29,7 @@ public final class NetTransport {
     private static final String KEY_ENABLED = "enabled";
     private static final String KEY_HOST = "host";
     private static final String KEY_PORT = "port";
+    private static final String KEY_PIN = "pin";
 
     public static final int DEFAULT_PORT = 8888;
 
@@ -56,6 +57,14 @@ public final class NetTransport {
 
     public static void setPort(Context context, int port) {
         prefs(context).edit().putInt(KEY_PORT, port).apply();
+    }
+
+    public static String getPin(Context context) {
+        return prefs(context).getString(KEY_PIN, "");
+    }
+
+    public static void setPin(Context context, String pin) {
+        prefs(context).edit().putString(KEY_PIN, pin == null ? "" : pin).apply();
     }
 
     private static SharedPreferences prefs(@Nullable Context context) {

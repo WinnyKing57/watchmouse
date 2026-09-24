@@ -1,5 +1,6 @@
 package com.winnyking.watchmousecompanion;
 
+import java.util.Base64;
 import android.util.Log;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,6 +9,8 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -46,8 +49,10 @@ public final class TcpInputServer {
     }
 
     private final InputTarget target;
+    private final String pin;
     private volatile StateListener stateListener;
     private final Set<Socket> clients = ConcurrentHashMap.newKeySet();
+    private final Map<Socket, byte[]> sessionKeys = new ConcurrentHashMap<>();
     private ScheduledExecutorService pinger;
 
     private ServerSocket serverSocket;
@@ -55,8 +60,13 @@ public final class TcpInputServer {
     private volatile boolean running;
 
     public TcpInputServer(InputTarget target, StateListener stateListener) {
+        this(target, stateListener, "");
+    }
+
+    public TcpInputServer(InputTarget target, StateListener stateListener, String pin) {
         this.target = target;
         this.stateListener = stateListener;
+        this.pin = pin == null ? "" : pin;
     }
 
     public void setStateListener(StateListener stateListener) {
@@ -159,23 +169,74 @@ public final class TcpInputServer {
                                 new InputStreamReader(
                                         client.getInputStream(), StandardCharsets.UTF_8));
                 OutputStream out = client.getOutputStream()) {
-            out.write(HELLO);
-            out.flush();
+            byte[] sessionKey = handshake(reader, out);
+            sessionKeys.put(client, sessionKey);
             String line;
             while (running && (line = reader.readLine()) != null) {
                 try {
-                    handleLine(line);
+                    if (sessionKey == null) {
+                        handleLine(line);
+                    } else {
+                        String plain = ProtocolCrypto.decryptFrame(sessionKey, line.trim());
+                        if (plain == null) {
+                            Log.w(TAG, "broken frame, closing connection");
+                            break;
+                        }
+                        handleLine(plain);
+                    }
                 } catch (Exception e) {
-                    Log.w(TAG, "bad message, ignoring: " + line, e);
+                    Log.w(TAG, "bad message, ignoring", e);
                 }
             }
         } catch (IOException e) {
             Log.i(TAG, "watch disconnected: " + e.getMessage());
         } finally {
+            sessionKeys.remove(client);
             closeQuietly(client);
             clients.remove(client);
             updateState();
         }
+    }
+
+    /**
+     * Protocol v2: send a salted hello, verify the client knows the shared PIN (authenticated
+     * <code>auth</code> frame) and return the derived session key — or {@code null} when running
+     * in legacy plaintext mode (empty PIN).
+     */
+    private byte[] handshake(BufferedReader reader, OutputStream out) throws IOException {
+        if (pin.isEmpty()) {
+            out.write(HELLO);
+            out.flush();
+            return null;
+        }
+        byte[] salt = new byte[ProtocolCrypto.SALT_LEN];
+        new SecureRandom().nextBytes(salt);
+        JSONObject hello = new JSONObject();
+        try {
+            hello.put("t", "hello");
+            hello.put("app", "WatchMouseCompanion");
+            hello.put("v", ProtocolCrypto.PROTOCOL_VERSION);
+            hello.put("salt", Base64.getEncoder().encodeToString(salt));
+        } catch (JSONException e) {
+            throw new IOException("cannot build hello", e);
+        }
+        out.write((hello.toString() + "\n").getBytes(StandardCharsets.UTF_8));
+        out.flush();
+        String first = reader.readLine();
+        if (first == null) {
+            throw new IOException("client closed during handshake");
+        }
+        byte[] key = ProtocolCrypto.deriveSessionKey(pin, salt);
+        String plain = ProtocolCrypto.decryptFrame(key, first.trim());
+        if (plain == null || !plain.contains("\"t\":\"auth\"")) {
+            throw new IOException("authentication failed (wrong PIN?)");
+        }
+        out.write(
+                        (ProtocolCrypto.encryptFrame(key, "{\"t\":\"welcome\"}") + "\n")
+                                .getBytes(StandardCharsets.UTF_8));
+        out.flush();
+        Log.i(TAG, "authenticated: encrypted transport");
+        return key;
     }
 
     private void handleLine(String line) throws JSONException {
@@ -213,9 +274,17 @@ public final class TcpInputServer {
         for (Socket client : clients) {
             try {
                 OutputStream out = client.getOutputStream();
-                out.write(PING);
+                byte[] key = sessionKeys.get(client);
+                String message = key == null ? "{\"t\":\"ping\"}" : "{\"t\":\"ping\"}";
+                byte[] payload =
+                        key == null
+                                ? PING
+                                : (ProtocolCrypto.encryptFrame(key, message) + "\n")
+                                        .getBytes(StandardCharsets.UTF_8);
+                out.write(payload);
                 out.flush();
-            } catch (IOException e) {
+            } catch (Exception e) {
+                sessionKeys.remove(client);
                 closeQuietly(client);
                 clients.remove(client);
                 updateState();

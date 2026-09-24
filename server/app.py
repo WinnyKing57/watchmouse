@@ -14,7 +14,9 @@ import html
 import json
 import os
 import re
+import secrets
 import sqlite3
+import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
@@ -22,10 +24,79 @@ from urllib.parse import urlparse
 DB_PATH = os.environ.get("REPORT_DB", "/data/reports.db")
 MAX_BODY = int(os.environ.get("MAX_BODY", "600000"))
 RATE_LIMIT = float(os.environ.get("RATE_LIMIT_SECONDS", "10"))
+RETENTION_DAYS = int(os.environ.get("REPORT_RETENTION_DAYS", "30"))
 AUTH_USER = os.environ.get("REPORT_USER", "")
 AUTH_PASSWORD = os.environ.get("REPORT_PASSWORD", "")
 
+# Only trust X-Forwarded-For when running behind a reverse proxy that sets it
+# (Coolify/Traefik by default). If set to "0", the socket peer address is used.
+TRUST_PROXY = os.environ.get("RATE_LIMIT_TRUST_PROXY", "1") == "1"
+
+# In-memory rate-limit window (ip -> last accepted timestamp), lazily purged so
+# it cannot grow unbounded.
 _rate = {}
+_RATE_MAX_ENTRIES = 8192
+_RATE_WINDOW = None
+
+_PURGE_INTERVAL_SECONDS = 3600
+
+
+def _rate_window():
+    global _RATE_WINDOW
+    now = time.time()
+    if _RATE_WINDOW is None or now - _RATE_WINDOW > 60:
+        _RATE_WINDOW = now
+        expired = [ip for ip, last in _rate.items() if now - last > RATE_LIMIT * 4]
+        for ip in expired:
+            _rate.pop(ip, None)
+        if len(_rate) > _RATE_MAX_ENTRIES:
+            for ip in list(_rate)[: max(1, len(_rate) - _RATE_MAX_ENTRIES)]:
+                _rate.pop(ip, None)
+    return _RATE_WINDOW
+
+
+def client_ip(request_handler):
+    """Best-effort client IP, honoring X-Forwarded-For behind the proxy only."""
+    header = request_handler.headers.get("X-Forwarded-For", "")
+    if TRUST_PROXY and header.strip():
+        return header.split(",")[0].strip()
+    return request_handler.client_address[0]
+
+
+def rate_limited(request_handler):
+    ip = client_ip(request_handler)
+    now = time.time()
+    _rate_window()
+    last = _rate.get(ip, 0)
+    if now - last < RATE_LIMIT:
+        return True
+    _rate[ip] = now
+    return False
+
+
+def purge_old(conn):
+    """Delete reports older than the retention window (logcat is sensitive data)."""
+    cutoff = int(time.time()) - RETENTION_DAYS * 86400
+    before = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
+    conn.execute("DELETE FROM reports WHERE created < ?", (cutoff,))
+    conn.commit()
+    after = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
+    if after != before:
+        print("retention purge: removed %d reports" % (before - after))
+    return before - after
+
+
+def _retention_thread(conn_factory):
+    while True:
+        time.sleep(_PURGE_INTERVAL_SECONDS)
+        try:
+            conn = conn_factory()
+            try:
+                purge_old(conn)
+            finally:
+                conn.close()
+        except Exception:
+            pass
 
 
 def connect():
@@ -46,15 +117,6 @@ def connect():
     )
     conn.commit()
     return conn
-
-
-def rate_limited(ip):
-    now = time.time()
-    last = _rate.get(ip, 0)
-    if now - last < RATE_LIMIT:
-        return True
-    _rate[ip] = now
-    return False
 
 
 class ReportView:
@@ -98,7 +160,9 @@ class ReportView:
         except Exception:
             return False
         user, _, password = decoded.partition(":")
-        return user == AUTH_USER and password == AUTH_PASSWORD
+        return secrets.compare_digest(user, AUTH_USER) and secrets.compare_digest(
+            password, AUTH_PASSWORD
+        )
 
     def deny_auth(self):
         self.send_response(401)
@@ -113,6 +177,20 @@ class Handler(ReportView, BaseHTTPRequestHandler):
         pass
 
     def do_GET(self):
+        path = urlparse(self.path).path
+        if path == "/healthz":
+            try:
+                conn = connect()
+                conn.close()
+                db_ok = True
+            except Exception:
+                db_ok = False
+            code = 200 if db_ok else 503
+            self._json(
+                code,
+                {"status": "ok" if db_ok else "db unavailable", "db": DB_PATH},
+            )
+            return
         if not self.check_auth():
             self.deny_auth()
             return
@@ -144,6 +222,9 @@ class Handler(ReportView, BaseHTTPRequestHandler):
                     "<p>%d reports — last 200</p>"
                     "<table><tr><th>ID</th><th>When</th><th>Client</th>"
                     "<th>Version</th><th>Device</th><th>Battery</th></tr>%s</table>"
+                    "<form method='post' action='/reports/delete-all' "
+                    "onsubmit=\"return confirm('Delete ALL reports?')\">"
+                    "<button>Delete all reports</button></form>"
                     % (total, items or "<tr><td colspan='6'>none</td></tr>")
                 )
                 self._page("WatchMouse reports", content)
@@ -204,10 +285,21 @@ class Handler(ReportView, BaseHTTPRequestHandler):
             self.send_header("Location", "/")
             self.end_headers()
             return
+        if re.fullmatch(r"/reports/delete-all", path) and self.check_auth():
+            conn = connect()
+            try:
+                conn.execute("DELETE FROM reports")
+                conn.commit()
+            finally:
+                conn.close()
+            self.send_response(302)
+            self.send_header("Location", "/")
+            self.end_headers()
+            return
         self._json(404, {"error": "not found"})
 
     def post_log(self):
-        if rate_limited(self.client_address[0]):
+        if rate_limited(self):
             self._json(429, {"error": "rate limited"})
             return
         try:
@@ -252,5 +344,16 @@ class Handler(ReportView, BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8080"))
-    print("report receiver on port %d, db %s" % (port, DB_PATH))
+    conn = connect()
+    try:
+        purge_old(conn)
+    finally:
+        conn.close()
+    threading.Thread(
+        target=_retention_thread, args=(connect,), daemon=True
+    ).start()
+    print(
+        "report receiver on port %d, db %s, retention %dd"
+        % (port, DB_PATH, RETENTION_DAYS)
+    )
     ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()

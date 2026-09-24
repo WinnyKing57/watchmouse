@@ -47,6 +47,8 @@
     <string name="pref_netHost_summary">Adresse IP ou nom d\'hôte du récepteur</string>
     <string name="pref_netPort">Port</string>
     <string name="pref_netPort_summary">Port TCP écouté par le récepteur (défaut 8888)</string>
+    <string name="pref_netPin">PIN</string>
+    <string name="pref_netPin_summary">PIN partagé avec le récepteur (--pin), il chiffre la liaison</string>
     <string name="pref_netStatus">Connexion</string>
     <string name="pref_net_connected">Connecté à %1$s</string>
     <string name="pref_net_disconnected">Non connecté</string>

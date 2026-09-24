@@ -18,6 +18,7 @@ package com.winnyking.watchmouse.net;
 
 import android.os.Handler;
 import android.os.Looper;
+import java.util.Base64;
 import android.util.Log;
 import androidx.annotation.MainThread;
 import com.winnyking.watchmouse.bluetooth.KeyboardReport.KeyboardDataSender;
@@ -40,19 +41,21 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Sends input over a plain TCP socket using newline-delimited JSON.
+ * Sends input over an encrypted TCP socket (protocol v2) using newline-delimited JSON.
  *
  * <p>The watch connects to a "receiver" (Linux/Windows server or Android companion app) on the
  * local network. Messages are tiny and lossless over Wi-Fi, so the full API is preserved:
  *
  * <ul>
- *   <li><code>{"t":"hello","app":"WatchMouse","v":1}</code> sent once on connect.
+ *   <li><code>{"t":"hello","app":"WatchMouse","v":2,"salt":...}</code> is sent by the receiver and
+ *       seeds the session key (HKDF + user PIN). The watch proves the PIN with an authenticated
+ *       <code>auth</code> frame; every frame after that is AES-128-GCM encrypted (see {@link
+ *       ProtocolCrypto}).
  *   <li><code>{"t":"mouse","l":0,"r":0,"m":0,"dx":1,"dy":-2,"w":0}</code> relative mouse state.
  *   <li><code>{"t":"key","mod":0,"k":[...6 scan codes]}</code> keyboard state.
  * </ul>
  *
- * <p>The receiver answers with a <code>hello</code> and then pings every 5 seconds so the watch can
- * detect stale connections and reconnect.
+ * <p>The receiver pings every 5 seconds so the watch can detect stale connections and reconnect.
  */
 public final class NetDataSender implements MouseDataSender, KeyboardDataSender {
 
@@ -76,7 +79,6 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
     private static final int READ_STALE_MS = 20000;
     private static final int RETRY_INITIAL_MS = 2000;
     private static final int RETRY_MAX_MS = 30000;
-    private static final String HELLO = "{\"t\":\"hello\",\"app\":\"WatchMouse\",\"v\":1}";
 
     private final Handler mainThread = new Handler(Looper.getMainLooper());
     private final Set<StatusListener> statusListeners = new CopyOnWriteArraySet<>();
@@ -103,6 +105,8 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
     @GuardedBy("lock") @Nullable private Thread thread;
     @GuardedBy("lock") private String host = "";
     @GuardedBy("lock") private int port = NetTransport.DEFAULT_PORT;
+    @GuardedBy("lock") private String pin = "";
+    @GuardedBy("lock") @Nullable private byte[] sessionKey;
     @GuardedBy("lock") private boolean enabled;
     @GuardedBy("lock") private boolean stopRequested;
 
@@ -134,6 +138,16 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
                 requestConnect();
             }
         }
+    }
+
+    /** Should be called on the main thread. */
+    @MainThread
+    public void setPin(String pin) {
+        synchronized (lock) {
+            this.pin = pin == null ? "" : pin;
+        }
+        closeSocket();
+        requestConnect();
     }
 
     /** Enable (start connecting with auto-reconnect) or disable the network transport. */
@@ -219,10 +233,12 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
             }
 
             Socket newSocket = null;
+            byte[] sessionKey = null;
             try {
                 Log.d(TAG, "connecting to " + host + ":" + port + " ...");
                 newSocket = new Socket();
                 newSocket.setSoTimeout(READ_STALE_MS);
+                newSocket.setTcpNoDelay(true);
                 newSocket.connect(new InetSocketAddress(host, port), CONNECT_TIMEOUT_MS);
                 OutputStream out = newSocket.getOutputStream();
                 synchronized (lock) {
@@ -232,16 +248,62 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
                     socket = newSocket;
                     outputStream = out;
                 }
-                Log.i(TAG, "connected to " + host + ":" + port);
-                write(HELLO);
+
+                // Protocol v2 handshake: the receiver owns the session. It sends
+                // {"t":"hello","v":2,"salt":...}; we derive the key from the PIN and reply with an
+                // authenticated {"t":"auth"} frame. Everything after that is encrypted.
+                BufferedReader rawReader =
+                        new BufferedReader(
+                                new InputStreamReader(
+                                        newSocket.getInputStream(), StandardCharsets.ISO_8859_1));
+                String sessionKeyPin;
+                synchronized (lock) {
+                    sessionKeyPin = pin;
+                }
+                String hello = readLineOrNull(rawReader);
+                if (hello == null || !hello.startsWith("{\"t\":\"hello\"")) {
+                    Log.w(TAG, "receiver did not start a v2 handshake");
+                    closeSocket();
+                    break;
+                }
+                JSONObject helloJson;
+                String saltB64;
+                try {
+                    helloJson = new JSONObject(hello);
+                    saltB64 = helloJson.optString("salt", "");
+                } catch (JSONException e) {
+                    Log.w(TAG, "malformed hello message");
+                    closeSocket();
+                    break;
+                }
+                if (helloJson.optInt("v") != ProtocolCrypto.PROTOCOL_VERSION
+                        || saltB64.length() < 4) {
+                    Log.w(TAG, "unsupported receiver version or missing salt");
+                    closeSocket();
+                    break;
+                }
+                final byte[] salt;
+                try {
+                    salt = Base64.getDecoder().decode(saltB64);
+                } catch (IllegalArgumentException e) {
+                    Log.w(TAG, "invalid salt in hello message");
+                    closeSocket();
+                    break;
+                }
+                sessionKey = ProtocolCrypto.deriveSessionKey(sessionKeyPin, salt);
+                synchronized (lock) {
+                    this.sessionKey = sessionKey;
+                }
+                out.write(
+                        (ProtocolCrypto.encryptFrame(sessionKey, "{\"t\":\"auth\"}") + "\n")
+                                .getBytes(StandardCharsets.UTF_8));
+                out.flush();
+
                 retryMs = RETRY_INITIAL_MS;
                 notifyStatus(true);
 
-                BufferedReader reader =
-                        new BufferedReader(
-                                new InputStreamReader(
-                                        newSocket.getInputStream(), StandardCharsets.UTF_8));
-                // Any data from the receiver (hello/pong/ping) refreshes the staleness timeout. An
+                byte[] key = sessionKey;
+                // Any data from the receiver (welcome/ping) refreshes the staleness timeout. An
                 // EOF or a SocketTimeoutException closes the connection and we reconnect.
                 while (true) {
                     synchronized (lock) {
@@ -249,12 +311,18 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
                             return;
                         }
                     }
-                    String line = reader.readLine();
-                    if (line == null) {
+                    String sFrame = readLineOrNull(rawReader);
+                    if (sFrame == null) {
                         Log.i(TAG, "receiver closed the connection");
                         break;
                     }
-                    handleIncoming(line);
+                    String plaintext = ProtocolCrypto.decryptFrame(key, sFrame.trim());
+                    if (plaintext == null) {
+                        Log.w(TAG, "auth rejected: wrong PIN or tampered traffic");
+                        closeSocket();
+                        break;
+                    }
+                    handleIncoming(plaintext);
                 }
             } catch (IOException e) {
                 Log.w(TAG, "connection to " + host + ":" + port + " failed: " + e.getMessage());
@@ -340,14 +408,21 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
     private void write(String message) {
         Socket s;
         OutputStream out;
+        byte[] key;
         synchronized (lock) {
             s = socket;
             out = outputStream;
+            key = sessionKey;
         }
         if (s == null || out == null || s.isClosed() || !s.isConnected()) {
             return;
         }
-        final byte[] payload = (message + "\n").getBytes(StandardCharsets.UTF_8);
+        if (key == null) {
+            Log.w(TAG, "session key not ready, dropping message");
+            return;
+        }
+        final String frame = ProtocolCrypto.encryptFrame(key, message);
+        final byte[] payload = (frame + "\n").getBytes(StandardCharsets.UTF_8);
         final Socket socketSnapshot = s;
         final OutputStream outputSnapshot = out;
         writer.execute(
@@ -379,6 +454,7 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
             s = socket;
             socket = null;
             outputStream = null;
+            sessionKey = null;
         }
         if (s != null) {
             try {
@@ -400,6 +476,11 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
                 listener.onConnectionChanged(nowConnected);
             }
         });
+    }
+
+    private static String readLineOrNull(BufferedReader reader) throws IOException {
+        String line = reader.readLine();
+        return line == null ? null : line.trim();
     }
 
     private static int asInt(boolean value) {

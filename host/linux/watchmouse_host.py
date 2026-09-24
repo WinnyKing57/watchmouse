@@ -8,33 +8,49 @@ Requirements
 * Kernel module:                sudo modprobe uinput
 * Write access to /dev/uinput:  sudo chmod 666 /dev/uinput
                                 (or add your user to the "input" group and udev)
-* Python module:                pip install python-uinput
+* Python modules:               pip install python-uinput python3-cryptography
 
 Usage
 -----
-    python watchmouse_host.py [--port 8888] [--bind 0.0.0.0] [--name WatchMouse]
+    python watchmouse_host.py --pin 1234 [--port 8888] [--bind 0.0.0.0]
 
-The watch must use the network transport and point at this machine (port 8888 by
-default). The same protocol is used by the companion/ Android app and the
-host/windows server (see host/README.md).
+The watch must use the network transport and point at this machine (port 8888
+by default) with the same PIN. The encrypted protocol (v2) is shared with the
+companion/ Android app and the host/windows server (see host/PROTOCOL.md).
+
+Legacy plaintext mode:
+    python watchmouse_host.py --insecure
 """
 
 import argparse
+import base64
+import hmac
+import hashlib
 import json
 import logging
+import os
 import socket
+import secrets
 import threading
 import time
 
 import uinput
+
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 # BUS_USB is not exported by the Debian python3-uinput package.
 BUS_USB = getattr(uinput, "BUS_USB", 0x03)
 
 LOG = logging.getLogger("watchmouse-host")
 
-HELLO = b'{"t":"hello","app":"WatchMouseHost","v":1}\n'
-PING = b'{"t":"ping"}\n'
+PROTOCOL_VERSION = 2
+KDF_INFO = b"watchmouse-v2"
+KEY_LEN = 16
+NONCE_LEN = 12
+TAG_LEN = 16
+
+PING = {"t": "ping"}
+WELCOME = {"t": "welcome"}
 
 # HID usage code -> Linux key code (from KeyboardHelper's keyMap + special keys).
 HID_TO_LINUX = {
@@ -90,6 +106,44 @@ _BTN_MAP = {
     "right": uinput.BTN_RIGHT,
     "middle": uinput.BTN_MIDDLE,
 }
+
+
+def hkdf(ikm, salt, info, length):
+    """RFC 5869 HKDF-SHA256 (extract + expand) — mirrors ProtocolCrypto (Java)."""
+    prk = hmac.new(salt, ikm, hashlib.sha256).digest()
+    output = b""
+    previous = b""
+    counter = 1
+    while len(output) < length:
+        previous = hmac.new(prk, previous + info + bytes([counter]), hashlib.sha256).digest()
+        output += previous
+        counter += 1
+    return output[:length]
+
+
+class SessionCrypto:
+    """AES-128-GCM session key + framing, mirroring ProtocolCrypto (Java)."""
+
+    def __init__(self, pin, salt):
+        self.key = hkdf((pin or "").encode("utf-8"), salt, KDF_INFO, KEY_LEN)
+        self._aead = AESGCM(self.key)
+
+    def encrypt(self, message):
+        if isinstance(message, str):
+            message = message.encode("utf-8")
+        nonce = os.urandom(NONCE_LEN)
+        ciphertext = self._aead.encrypt(nonce, message, None)
+        return base64.b64encode(nonce + ciphertext).decode("ascii")
+
+    def decrypt(self, frame):
+        try:
+            data = base64.b64decode(frame, validate=True)
+            if len(data) < NONCE_LEN + TAG_LEN:
+                return None
+            nonce, ciphertext = data[:NONCE_LEN], data[NONCE_LEN:]
+            return self._aead.decrypt(nonce, ciphertext, None).decode("utf-8")
+        except Exception:
+            return None
 
 
 class UinputSink:
@@ -149,34 +203,117 @@ def parse_modifier_keys(modifier, keys):
 
 
 class Client:
-    def __init__(self, sock, addr, sink):
+    def __init__(self, sock, addr, sink, pin):
         self.sock = sock
         self.addr = addr
         self.sink = sink
+        self.pin = pin
         self._stop = threading.Event()
 
     def handle(self):
         sock = self.sock
         try:
-            sock.sendall(HELLO)
-            pinger = threading.Thread(target=self._ping_loop, daemon=True)
-            pinger.start()
-            for line in sock.makefile("r", encoding="utf-8", errors="replace"):
-                line = line.strip()
-                if not line:
-                    continue
-                if self._stop.is_set():
-                    break
-                try:
-                    message = json.loads(line)
-                    self._handle_message(message)
-                except ValueError:
-                    LOG.warning("bad message from %s: %r", self.addr, line)
+            if self.pin is None:
+                self._handle_plaintext(sock)
+            else:
+                self._handle_encrypted(sock)
         except OSError as exc:
             LOG.info("client %s disconnected: %s", self.addr, exc)
         finally:
             self._stop.set()
             sock.close()
+
+    def _handle_plaintext(self, sock):
+        """Legacy protocol v1: newline-delimited plaintext JSON."""
+        LOG.info("client %s: legacy plaintext transport (--insecure)", self.addr[0])
+        pinger = threading.Thread(target=self._send_plain, args=(json.dumps(PING),), daemon=True)
+        pinger.start()
+        for line in sock.makefile("r", encoding="utf-8", errors="replace"):
+            line = line.strip()
+            if not line:
+                continue
+            if self._stop.is_set():
+                break
+            try:
+                self._handle_message(json.loads(line))
+            except ValueError:
+                LOG.warning("bad message from %s: %r", self.addr, line)
+
+    def _handle_encrypted(self, sock):
+        """Protocol v2: salted hello, PIN auth, AES-128-GCM frames."""
+        salt = secrets.token_bytes(16)
+        hello = json.dumps(
+            {"t": "hello", "app": "WatchMouseHost", "v": PROTOCOL_VERSION,
+             "salt": base64.b64encode(salt).decode("ascii")}
+        )
+        sock.sendall((hello + "\n").encode("utf-8"))
+
+        first = self._read_line(sock)
+        if first is None:
+            LOG.info("client %s closed during handshake", self.addr[0])
+            return
+        crypto = SessionCrypto(self.pin, salt)
+        plaintext = crypto.decrypt(first.strip())
+        authorized = plaintext is not None and plaintext.find('"t":"auth"') != -1
+        if not authorized:
+            LOG.warning("client %s: authentication failed (bad PIN?)", self.addr[0])
+            return
+        LOG.info("client %s: authenticated, encrypted transport", self.addr[0])
+
+        sock.sendall((crypto.encrypt(json.dumps(WELCOME)) + "\n").encode("utf-8"))
+        pinger = threading.Thread(
+            target=self._send_encrypted, args=(crypto, json.dumps(PING)), daemon=True
+        )
+        pinger.start()
+        while not self._stop.is_set():
+            line = self._read_line(sock)
+            if line is None:
+                return
+            plaintext = crypto.decrypt(line.strip())
+            if plaintext is None:
+                LOG.warning("client %s: broken frame, dropping", self.addr[0])
+                break
+            try:
+                self._handle_message(json.loads(plaintext))
+            except ValueError:
+                LOG.warning("bad message from %s: %r", self.addr, plaintext)
+
+    def _read_line(self, sock, timeout=None):
+        """Reads a single newline-terminated ASCII-safe line as raw bytes."""
+        old_timeout = sock.gettimeout()
+        if timeout is not None:
+            sock.settimeout(timeout)
+        try:
+            data = b""
+            while True:
+                chunk = sock.recv(1)
+                if not chunk:
+                    return None
+                if chunk == b"\n":
+                    return data
+                data += chunk
+                if len(data) > 65536:
+                    return None
+        except OSError:
+            return None
+        finally:
+            sock.settimeout(old_timeout)
+
+    def _send_encrypted(self, crypto, message):
+        while not self._stop.is_set():
+            try:
+                self.sock.sendall((crypto.encrypt(message) + "\n").encode("utf-8"))
+            except OSError:
+                return
+            time.sleep(5)
+
+    def _send_plain(self, message):
+        while not self._stop.is_set():
+            try:
+                self.sock.sendall((message + "\n").encode("utf-8"))
+            except OSError:
+                return
+            time.sleep(5)
 
     def _handle_message(self, message):
         kind = message.get("t")
@@ -192,16 +329,10 @@ class Client:
         elif kind == "key":
             pressed = parse_modifier_keys(message.get("mod", 0), message.get("k", []))
             self.sink.keyboard(pressed)
-        elif kind not in ("hello", "ping"):
+        elif kind in ("hello", "ping", "auth", "welcome"):
+            pass
+        else:
             LOG.warning("unknown message type %r", kind)
-
-    def _ping_loop(self):
-        while not self._stop.is_set():
-            try:
-                self.sock.sendall(PING)
-            except OSError:
-                return
-            time.sleep(5)
 
 
 def main():
@@ -209,7 +340,21 @@ def main():
     ap.add_argument("--port", type=int, default=8888, help="TCP port to listen on (default 8888)")
     ap.add_argument("--bind", default="0.0.0.0", help="bind address (default 0.0.0.0)")
     ap.add_argument("--name", default="WatchMouse", help="name of the virtual device")
+    ap.add_argument(
+        "--pin", default=None,
+        help="shared PIN required to connect (encrypted protocol v2)")
+    ap.add_argument(
+        "--insecure", action="store_true",
+        help="accept legacy plaintext connections without a PIN (NOT recommended)")
     args = ap.parse_args()
+
+    pin = (args.pin or "").strip()
+    if not pin:
+        pin = (os.environ.get("WATCHMOUSE_PIN") or "").strip()
+    if not pin and not args.insecure:
+        ap.error("set --pin (or the WATCHMOUSE_PIN environment variable), or pass --insecure")
+    if not pin:
+        pin = None
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -219,11 +364,15 @@ def main():
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind((args.bind, args.port))
         server.listen(4)
-        LOG.info("WatchMouse host listening on %s:%d", args.bind, args.port)
+        mode = "encrypted/PIN" if pin else "plaintext (--insecure)"
+        LOG.info("WatchMouse host listening on %s:%d [%s]", args.bind, args.port, mode)
         while True:
             conn, addr = server.accept()
+            conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             LOG.info("watch connected from %s:%d", addr[0], addr[1])
-            threading.Thread(target=Client(conn, addr, sink).handle, daemon=True).start()
+            threading.Thread(
+                target=Client(conn, addr, sink, pin).handle, daemon=True
+            ).start()
     except KeyboardInterrupt:
         pass
     finally:

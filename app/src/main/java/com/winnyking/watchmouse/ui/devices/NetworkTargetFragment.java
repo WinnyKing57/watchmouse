@@ -41,6 +41,7 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
     private static final String KEY_TRANSPORT = "pref_transport_network";
     private static final String KEY_HOST = "pref_net_host";
     private static final String KEY_PORT = "pref_net_port";
+    private static final String KEY_PIN = "pref_net_pin";
     private static final String KEY_STATUS = "pref_net_status";
     private static final String KEY_OPEN = "pref_net_open";
 
@@ -50,6 +51,7 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
     private SwitchPreferenceCompat transportPref;
     private EditTextPreference hostPref;
     private EditTextPreference portPref;
+    private EditTextPreference pinPref;
     private Preference statusPref;
 
     private final NetDataSender.StatusListener statusListener = this::updateStatus;
@@ -69,6 +71,7 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
         transportPref = findPreference(KEY_TRANSPORT);
         hostPref = findPreference(KEY_HOST);
         portPref = findPreference(KEY_PORT);
+        pinPref = findPreference(KEY_PIN);
         statusPref = findPreference(KEY_STATUS);
 
         refresh();
@@ -97,6 +100,15 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
                         NetTransport.setPort(getContext(), parsePort(value));
                         refresh();
                         updateTarget();
+                        return true;
+                    });
+        }
+        if (pinPref != null) {
+            pinPref.setOnPreferenceChangeListener(
+                    (preference, value) -> {
+                        NetTransport.setPin(getContext(), String.valueOf(value));
+                        netDataSender.setPin(NetTransport.getPin(getContext()));
+                        refresh();
                         return true;
                     });
         }
@@ -145,6 +157,7 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
         if (sendRouter.isNetworkMode()) {
             String host = NetTransport.getHost(getContext());
             int port = NetTransport.getPort(getContext());
+            netDataSender.setPin(NetTransport.getPin(getContext()));
             netDataSender.setTarget(host, port);
         }
     }
@@ -162,6 +175,9 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
         }
         if (portPref != null) {
             portPref.setText(String.valueOf(NetTransport.getPort(getContext())));
+        }
+        if (pinPref != null) {
+            pinPref.setText(NetTransport.getPin(getContext()));
         }
     }
 

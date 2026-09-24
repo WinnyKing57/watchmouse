@@ -3,7 +3,7 @@ Version: __VERSION__
 Section: utils
 Priority: optional
 Architecture: all
-Depends: python3, python3-uinput
+Depends: python3, python3-uinput, python3-cryptography
 Maintainer: WinnyKing57 <winnyking57@users.noreply.github.com>
 Description: WatchMouse Linux host (uinput)
  Turns the TCP input sent by a Wear OS watch into a real mouse and

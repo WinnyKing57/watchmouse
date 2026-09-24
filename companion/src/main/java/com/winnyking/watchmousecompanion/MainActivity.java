@@ -7,6 +7,7 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import java.io.IOException;
@@ -37,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView updateStatusText;
     private Button toggleButton;
     private Button updateButton;
+    private EditText pinInput;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
         updateStatusText = findViewById(R.id.updateStatusText);
         toggleButton = findViewById(R.id.toggleButton);
         updateButton = findViewById(R.id.updateButton);
+        pinInput = findViewById(R.id.pinInput);
 
         addressText.setText(formatAddressList(getLocalIPv4Addresses(), DEFAULT_PORT));
         toggleButton.setOnClickListener(this::onToggle);
@@ -94,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
         }
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         GestureTarget target = new GestureTarget(metrics.widthPixels, metrics.heightPixels);
+        String pin = pinInput.getText() == null ? "" : pinInput.getText().toString().trim();
         activeServer =
                 new TcpInputServer(
                         target,
@@ -102,7 +106,8 @@ public class MainActivity extends AppCompatActivity {
                                         () -> {
                                             setStatus(state);
                                             updateUi();
-                                        }));
+                                        }),
+                        pin);
         try {
             activeServer.start(DEFAULT_PORT);
             setStatus("Listening on port " + activeServer.getPort());

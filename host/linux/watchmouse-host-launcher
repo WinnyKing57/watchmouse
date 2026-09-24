@@ -10,6 +10,11 @@ fi
 IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{print $7; exit}')"
 [ -z "$IP" ] && IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 ADDR="TCP ${IP:-localhost}:8888"
+PIN_LINE=""
+if [ -r /etc/watchmouse-host.env ]; then
+  . /etc/watchmouse-host.env 2>/dev/null || true
+  PIN_LINE="PIN : ${WATCHMOUSE_PIN:-non defini} (a saisir dans la montre)"
+fi
 
 command -v notify-send >/dev/null 2>&1 && \
   notify-send -i watchmouse-host "WatchMouse Host" "Service: $(systemctl is-active "$SERVICE" 2>/dev/null || echo inconnu) — $ADDR" 2>/dev/null || true
@@ -28,6 +33,7 @@ fi
 CMD="
 echo '=== WatchMouse Host ===';
 echo 'Adresse a entrer dans la montre : $ADDR';
+echo '$PIN_LINE';
 echo 'Service : \$(systemctl is-active $SERVICE 2>/dev/null)';
 echo;
 systemctl status --no-pager $SERVICE --lines=0 2>/dev/null | sed -n '1,8p';

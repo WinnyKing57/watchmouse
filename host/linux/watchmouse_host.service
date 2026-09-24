@@ -4,7 +4,8 @@ After=multi-user.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /opt/watchmouse-host/watchmouse_host.py --port 8888
+EnvironmentFile=-/etc/watchmouse-host.env
+ExecStart=/usr/bin/python3 /opt/watchmouse-host/watchmouse_host.py --port 8888 --pin '${WATCHMOUSE_PIN}'
 Restart=always
 RestartSec=3
 

@@ -18,4 +18,5 @@
     <string name="update_sent">Asked the watch to check for updates. Approve the install
         on the watch screen.</string>
     <string name="update_no_client">No watch connected — start the receiver first.</string>
+    <string name="pin_hint">Shared PIN (leave empty for plaintext)</string>
 </resources>
