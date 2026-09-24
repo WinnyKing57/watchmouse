@@ -31,6 +31,9 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import org.json.JSONException;
@@ -79,6 +82,20 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
     private final Set<StatusListener> statusListeners = new CopyOnWriteArraySet<>();
     private final Set<CommandListener> commandListeners = new CopyOnWriteArraySet<>();
 
+    // Input events arrive from any thread (the UI thread for touch/mouse/key events, the status
+    // callbacks for Bluetooth). StrictMode forbids network I/O off the dedicated net thread, so all
+    // socket writes are serialized on one dedicated writer thread.
+    private final ExecutorService writer =
+            Executors.newSingleThreadExecutor(
+                    new ThreadFactory() {
+                        @Override
+                        public Thread newThread(Runnable r) {
+                            Thread t = new Thread(r, "watchmouse-write");
+                            t.setDaemon(true);
+                            return t;
+                        }
+                    });
+
     private final Object lock = new Object();
 
     @GuardedBy("lock") @Nullable private Socket socket;
@@ -125,6 +142,7 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
         synchronized (lock) {
             enabled = on;
             if (on) {
+                stopRequested = false;
                 requestConnect();
             } else {
                 stopRequested = true;
@@ -329,14 +347,30 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
         if (s == null || out == null || s.isClosed() || !s.isConnected()) {
             return;
         }
-        try {
-            out.write((message + "\n").getBytes(StandardCharsets.UTF_8));
-            out.flush();
-        } catch (IOException e) {
-            Log.w(TAG, "send failed: " + e.getMessage());
-            closeSocket();
-            notifyStatus(false);
-        }
+        final byte[] payload = (message + "\n").getBytes(StandardCharsets.UTF_8);
+        final Socket socketSnapshot = s;
+        final OutputStream outputSnapshot = out;
+        writer.execute(
+                () -> {
+                    Socket current;
+                    OutputStream currentOut;
+                    synchronized (lock) {
+                        current = socket;
+                        currentOut = outputStream;
+                    }
+                    if (current != socketSnapshot || currentOut != outputSnapshot) {
+                        // The connection changed while the message was queued; drop it.
+                        return;
+                    }
+                    try {
+                        outputSnapshot.write(payload);
+                        outputSnapshot.flush();
+                    } catch (IOException e) {
+                        Log.w(TAG, "send failed: " + e.getMessage());
+                        closeSocket();
+                        notifyStatus(false);
+                    }
+                });
     }
 
     private void closeSocket() {
