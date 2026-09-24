@@ -75,6 +75,7 @@ public final class UpdateChecker {
         connection.setConnectTimeout(10000);
         connection.setReadTimeout(10000);
         connection.setRequestProperty("Accept", "application/vnd.github+json");
+        connection.setRequestProperty("User-Agent", "WatchMouse");
         try {
             int code = connection.getResponseCode();
             if (code != HttpURLConnection.HTTP_OK) {
