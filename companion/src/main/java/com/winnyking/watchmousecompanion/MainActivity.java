@@ -29,7 +29,8 @@ public class MainActivity extends AppCompatActivity {
 
     private final Handler mainThread = new Handler(Looper.getMainLooper());
 
-    private TcpInputServer server;
+    private static TcpInputServer activeServer;
+
     private TextView statusText;
     private TextView addressText;
     private TextView accessibilityText;
@@ -58,35 +59,42 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (activeServer != null) {
+            activeServer.setStateListener(
+                    state ->
+                            mainThread.post(
+                                    () -> {
+                                        setStatus(state);
+                                        updateUi();
+                                    }));
+        }
         refreshAccessibilityState();
+        updateUi();
     }
 
     @Override
-    protected void onDestroy() {
-        if (server != null) {
-            server.stop();
-            server = null;
+    protected void onPause() {
+        if (activeServer != null) {
+            activeServer.setStateListener(null);
         }
-        super.onDestroy();
+        super.onPause();
     }
 
     private void onToggle(View view) {
-        if (server != null) {
-            server.stop();
-            server = null;
-            updateUi();
+        if (activeServer != null) {
+            stopServer();
         } else {
             startServer();
         }
     }
 
     private synchronized void startServer() {
-        if (server != null) {
+        if (activeServer != null) {
             return;
         }
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         GestureTarget target = new GestureTarget(metrics.widthPixels, metrics.heightPixels);
-        server =
+        activeServer =
                 new TcpInputServer(
                         target,
                         state ->
@@ -96,32 +104,40 @@ public class MainActivity extends AppCompatActivity {
                                             updateUi();
                                         }));
         try {
-            server.start(DEFAULT_PORT);
-            setStatus("Listening on port " + server.getPort());
+            activeServer.start(DEFAULT_PORT);
+            setStatus("Listening on port " + activeServer.getPort());
         } catch (IOException e) {
             setStatus("Could not start: " + e.getMessage());
-            server = null;
+            activeServer = null;
+        }
+        updateUi();
+    }
+
+    private synchronized void stopServer() {
+        if (activeServer != null) {
+            activeServer.stop();
+            activeServer = null;
         }
         updateUi();
     }
 
     private void updateUi() {
-        boolean running = server != null;
+        boolean running = activeServer != null;
         toggleButton.setText(running ? R.string.stop_button : R.string.start_button);
         updateButton.setEnabled(running);
         statusText.setText(
                 running
-                        ? "Listening on port " + server.getPort() + " — clients: "
-                                + server.getClientCount()
+                        ? "Listening on port " + activeServer.getPort() + " — clients: "
+                                + activeServer.getClientCount()
                         : getString(R.string.status_stopped));
     }
 
     private void onUpdateWatch(View view) {
-        if (server == null) {
+        if (activeServer == null) {
             updateStatusText.setText(R.string.update_no_client);
             return;
         }
-        boolean sent = server.sendToAll("{\"t\":\"cmd\",\"a\":\"update\"}");
+        boolean sent = activeServer.sendToAll("{\"t\":\"cmd\",\"a\":\"update\"}");
         updateStatusText.setText(sent ? R.string.update_sent : R.string.update_no_client);
     }
 
@@ -131,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
                         Locale.getDefault(),
                         "%s — clients: %d",
                         text,
-                        server == null ? 0 : server.getClientCount()));
+                        activeServer == null ? 0 : activeServer.getClientCount()));
     }
 
     private void refreshAccessibilityState() {
