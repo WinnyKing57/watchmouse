@@ -73,3 +73,7 @@ secrets.properties
 # Local signing keystore
 /keystore/
 __pycache__/
+
+# WatchMouse Linux host packaging output
+host/linux/build-deb/
+*.deb

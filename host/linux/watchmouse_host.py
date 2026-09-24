@@ -28,6 +28,9 @@ import time
 
 import uinput
 
+# BUS_USB is not exported by the Debian python3-uinput package.
+BUS_USB = getattr(uinput, "BUS_USB", 0x03)
+
 LOG = logging.getLogger("watchmouse-host")
 
 HELLO = b'{"t":"hello","app":"WatchMouseHost","v":1}\n'
@@ -96,7 +99,7 @@ class UinputSink:
         self.device = uinput.Device(
             MOUSE_EVENTS + KEYBOARD_EVENTS,
             name=name,
-            bustype=uinput.BUS_USB,
+            bustype=BUS_USB,
         )
         self._buttons = {"left": 0, "right": 0, "middle": 0}
         self._pressed = set()

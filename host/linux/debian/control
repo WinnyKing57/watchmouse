@@ -1,0 +1,13 @@
+Package: watchmouse-host
+Version: __VERSION__
+Section: utils
+Priority: optional
+Architecture: all
+Depends: python3, python3-uinput
+Maintainer: WinnyKing57 <winnyking57@users.noreply.github.com>
+Description: WatchMouse Linux host (uinput)
+ Turns the TCP input sent by a Wear OS watch into a real mouse and
+ keyboard on a Linux desktop, using the uinput kernel module.
+ The watch speaks a tiny newline-delimited JSON protocol over TCP
+ (default port 8888); this package installs the receiver as a
+ systemd service named watchmouse-host.
