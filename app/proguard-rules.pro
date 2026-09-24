@@ -8,6 +8,7 @@
 -dontwarn afu.org.checkerframework.checker.**
 
 -keep class com.winnyking.watchmouse.ui.devices.AvailableDevicesFragment {}
+-keep class com.winnyking.watchmouse.ui.devices.NetworkTargetFragment {}
 -keep class com.winnyking.watchmouse.ui.devices.AboutFragment {}
 -keep class com.winnyking.watchmouse.ui.input.InputSettingsFragment {}
 

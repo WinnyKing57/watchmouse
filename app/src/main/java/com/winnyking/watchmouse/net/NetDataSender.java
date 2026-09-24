@@ -112,6 +112,7 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
         synchronized (lock) {
             this.host = host == null ? "" : host.trim();
             this.port = port;
+            Log.i(TAG, "target set to " + this.host + ":" + this.port + " (enabled=" + enabled + ")");
             if (enabled) {
                 requestConnect();
             }
@@ -194,12 +195,14 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
             }
 
             if (host.isEmpty()) {
+                Log.d(TAG, "no host configured, waiting");
                 sleep(RETRY_INITIAL_MS);
                 continue;
             }
 
             Socket newSocket = null;
             try {
+                Log.d(TAG, "connecting to " + host + ":" + port + " ...");
                 newSocket = new Socket();
                 newSocket.setSoTimeout(READ_STALE_MS);
                 newSocket.connect(new InetSocketAddress(host, port), CONNECT_TIMEOUT_MS);
@@ -236,7 +239,7 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
                     handleIncoming(line);
                 }
             } catch (IOException e) {
-                Log.w(TAG, "connection problem: " + e.getMessage());
+                Log.w(TAG, "connection to " + host + ":" + port + " failed: " + e.getMessage());
             } finally {
                 closeSocket();
                 notifyStatus(false);

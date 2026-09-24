@@ -18,6 +18,7 @@ package com.winnyking.watchmouse.ui.devices;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
@@ -36,6 +37,7 @@ import com.winnyking.watchmouse.ui.input.ModeSelectFragment;
  */
 public class NetworkTargetFragment extends PreferenceFragmentCompat {
 
+    private static final String TAG = "NetTargetFragment";
     private static final String KEY_TRANSPORT = "pref_transport_network";
     private static final String KEY_HOST = "pref_net_host";
     private static final String KEY_PORT = "pref_net_port";
@@ -60,6 +62,9 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i(TAG, "opened, host=" + NetTransport.getHost(getContext())
+                + " port=" + NetTransport.getPort(getContext())
+                + " enabled=" + NetTransport.isEnabled(getContext()));
 
         transportPref = findPreference(KEY_TRANSPORT);
         hostPref = findPreference(KEY_HOST);
@@ -112,6 +117,7 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
         super.onResume();
         netDataSender.registerStatusListener(statusListener);
         refresh();
+        Log.i(TAG, "resumed, connected=" + netDataSender.isConnected());
         updateStatus(netDataSender.isConnected());
     }
 
@@ -124,6 +130,7 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
     private void applyTransport(boolean on) {
         sendRouter.setNetworkMode(on);
         NetTransport.setEnabled(getContext(), on);
+        Log.i(TAG, "transport network " + (on ? "enabled" : "disabled"));
         if (on) {
             updateTarget();
             netDataSender.setEnabled(true);
@@ -136,8 +143,9 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
 
     private void updateTarget() {
         if (sendRouter.isNetworkMode()) {
-            netDataSender.setTarget(
-                    NetTransport.getHost(getContext()), NetTransport.getPort(getContext()));
+            String host = NetTransport.getHost(getContext());
+            int port = NetTransport.getPort(getContext());
+            netDataSender.setTarget(host, port);
         }
     }
 
