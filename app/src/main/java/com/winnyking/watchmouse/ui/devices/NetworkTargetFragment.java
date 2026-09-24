@@ -106,7 +106,7 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
         if (pinPref != null) {
             pinPref.setOnPreferenceChangeListener(
                     (preference, value) -> {
-                        NetTransport.setPin(getContext(), String.valueOf(value));
+                        NetTransport.setPin(getContext(), String.valueOf(value).trim());
                         netDataSender.setPin(NetTransport.getPin(getContext()));
                         refresh();
                         return true;
@@ -128,6 +128,7 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
     public void onResume() {
         super.onResume();
         netDataSender.registerStatusListener(statusListener);
+        restoreTransport();
         refresh();
         Log.i(TAG, "resumed, connected=" + netDataSender.isConnected());
         updateStatus(netDataSender.isConnected());
@@ -151,6 +152,26 @@ public class NetworkTargetFragment extends PreferenceFragmentCompat {
         }
         refresh();
         updateStatus(netDataSender.isConnected());
+    }
+
+    /**
+     * The persisted transport preference outlives the process, but the socket layer starts
+     * disabled in memory. On every resume, re-assert the persisted state so the watch reconnect
+     * works automatically after the app was killed.
+     */
+    private void restoreTransport() {
+        boolean persisted = NetTransport.isEnabled(getContext());
+        if (!persisted) {
+            netDataSender.setEnabled(false);
+            return;
+        }
+        if (!sendRouter.isNetworkMode()) {
+            sendRouter.setNetworkMode(true);
+        }
+        if (!netDataSender.isConnected()) {
+            updateTarget();
+            netDataSender.setEnabled(true);
+        }
     }
 
     private void updateTarget() {

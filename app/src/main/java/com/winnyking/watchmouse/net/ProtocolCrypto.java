@@ -59,7 +59,7 @@ public final class ProtocolCrypto {
 
     /** Derives the 16-byte AES session key from the PIN and the server-provided salt. */
     public static byte[] deriveSessionKey(String pin, byte[] salt) {
-        byte[] ikm = (pin == null ? "" : pin).getBytes(StandardCharsets.UTF_8);
+        byte[] ikm = (pin == null ? "" : pin.trim()).getBytes(StandardCharsets.UTF_8);
         byte[] prk = hmac(salt, ikm);
         return hkdfExpand(prk, KDF_INFO.getBytes(StandardCharsets.UTF_8), KEY_LEN);
     }

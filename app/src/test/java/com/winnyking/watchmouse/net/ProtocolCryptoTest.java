@@ -83,4 +83,11 @@ public final class ProtocolCryptoTest {
                 ProtocolCrypto.KEY_LEN);
         assertEquals(ProtocolCrypto.KEY_LEN, key.length);
     }
+
+    @Test
+    public void pin_whitespaceIsTrimmed() {
+        assertEquals(
+                HexFormat.of().formatHex(ProtocolCrypto.deriveSessionKey("4821", salt())),
+                HexFormat.of().formatHex(ProtocolCrypto.deriveSessionKey("  4821\n", salt())));
+    }
 }

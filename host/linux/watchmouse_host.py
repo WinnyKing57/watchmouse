@@ -51,6 +51,11 @@ TAG_LEN = 16
 
 PING = {"t": "ping"}
 WELCOME = {"t": "welcome"}
+_COMPACT = (",", ":")
+
+
+def _dumps(message):
+    return json.dumps(message, separators=_COMPACT)
 
 # HID usage code -> Linux key code (from KeyboardHelper's keyMap + special keys).
 HID_TO_LINUX = {
@@ -125,7 +130,7 @@ class SessionCrypto:
     """AES-128-GCM session key + framing, mirroring ProtocolCrypto (Java)."""
 
     def __init__(self, pin, salt):
-        self.key = hkdf((pin or "").encode("utf-8"), salt, KDF_INFO, KEY_LEN)
+        self.key = hkdf((pin or "").strip().encode("utf-8"), salt, KDF_INFO, KEY_LEN)
         self._aead = AESGCM(self.key)
 
     def encrypt(self, message):
@@ -226,7 +231,7 @@ class Client:
     def _handle_plaintext(self, sock):
         """Legacy protocol v1: newline-delimited plaintext JSON."""
         LOG.info("client %s: legacy plaintext transport (--insecure)", self.addr[0])
-        pinger = threading.Thread(target=self._send_plain, args=(json.dumps(PING),), daemon=True)
+        pinger = threading.Thread(target=self._send_plain, args=(_dumps(PING),), daemon=True)
         pinger.start()
         for line in sock.makefile("r", encoding="utf-8", errors="replace"):
             line = line.strip()
@@ -242,7 +247,7 @@ class Client:
     def _handle_encrypted(self, sock):
         """Protocol v2: salted hello, PIN auth, AES-128-GCM frames."""
         salt = secrets.token_bytes(16)
-        hello = json.dumps(
+        hello = _dumps(
             {"t": "hello", "app": "WatchMouseHost", "v": PROTOCOL_VERSION,
              "salt": base64.b64encode(salt).decode("ascii")}
         )
@@ -253,6 +258,13 @@ class Client:
             LOG.info("client %s closed during handshake", self.addr[0])
             return
         crypto = SessionCrypto(self.pin, salt)
+        if os.environ.get("WATCHMOUSE_TRACE"):
+            LOG.info(
+                "trace: salt=%s key=%s pinLen=%d",
+                base64.b64encode(salt).decode("ascii"),
+                crypto.key.hex(),
+                len(self.pin or ""),
+            )
         plaintext = crypto.decrypt(first.strip())
         authorized = plaintext is not None and plaintext.find('"t":"auth"') != -1
         if not authorized:
@@ -260,9 +272,9 @@ class Client:
             return
         LOG.info("client %s: authenticated, encrypted transport", self.addr[0])
 
-        sock.sendall((crypto.encrypt(json.dumps(WELCOME)) + "\n").encode("utf-8"))
+        sock.sendall((crypto.encrypt(_dumps(WELCOME)) + "\n").encode("utf-8"))
         pinger = threading.Thread(
-            target=self._send_encrypted, args=(crypto, json.dumps(PING)), daemon=True
+            target=self._send_encrypted, args=(crypto, _dumps(PING)), daemon=True
         )
         pinger.start()
         while not self._stop.is_set():
@@ -279,7 +291,11 @@ class Client:
                 LOG.warning("bad message from %s: %r", self.addr, plaintext)
 
     def _read_line(self, sock, timeout=None):
-        """Reads a single newline-terminated ASCII-safe line as raw bytes."""
+        """Reads a single newline-terminated ASCII-safe line as raw bytes.
+
+        Logs any partial data if the peer disconnects mid-frame, so a client
+        closing during the handshake can be diagnosed.
+        """
         old_timeout = sock.gettimeout()
         if timeout is not None:
             sock.settimeout(timeout)
@@ -288,6 +304,11 @@ class Client:
             while True:
                 chunk = sock.recv(1)
                 if not chunk:
+                    if data:
+                        LOG.info(
+                            "client %s closed after sending %d bytes: %r",
+                            self.addr[0], len(data), data[:96],
+                        )
                     return None
                 if chunk == b"\n":
                     return data
@@ -295,6 +316,11 @@ class Client:
                 if len(data) > 65536:
                     return None
         except OSError:
+            if data:
+                LOG.info(
+                    "client %s read error after %d bytes: %r",
+                    self.addr[0], len(data), data[:96],
+                )
             return None
         finally:
             sock.settimeout(old_timeout)

@@ -240,6 +240,7 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
                 newSocket.setSoTimeout(READ_STALE_MS);
                 newSocket.setTcpNoDelay(true);
                 newSocket.connect(new InetSocketAddress(host, port), CONNECT_TIMEOUT_MS);
+                Log.d(TAG, "socket connected, waiting for v2 hello");
                 OutputStream out = newSocket.getOutputStream();
                 synchronized (lock) {
                     if (stopRequested || !enabled) {
@@ -261,24 +262,28 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
                     sessionKeyPin = pin;
                 }
                 String hello = readLineOrNull(rawReader);
-                if (hello == null || !hello.startsWith("{\"t\":\"hello\"")) {
-                    Log.w(TAG, "receiver did not start a v2 handshake");
+                if (hello == null) {
+                    Log.w(TAG, "receiver closed during v2 handshake");
                     closeSocket();
                     break;
                 }
                 JSONObject helloJson;
-                String saltB64;
                 try {
                     helloJson = new JSONObject(hello);
-                    saltB64 = helloJson.optString("salt", "");
                 } catch (JSONException e) {
-                    Log.w(TAG, "malformed hello message");
+                    Log.w(TAG, "malformed hello message: " + hello);
                     closeSocket();
                     break;
                 }
-                if (helloJson.optInt("v") != ProtocolCrypto.PROTOCOL_VERSION
-                        || saltB64.length() < 4) {
-                    Log.w(TAG, "unsupported receiver version or missing salt");
+                if (!"hello".equals(helloJson.optString("t"))
+                        || helloJson.optInt("v") != ProtocolCrypto.PROTOCOL_VERSION) {
+                    Log.w(TAG, "unsupported receiver handshake: " + hello);
+                    closeSocket();
+                    break;
+                }
+                String saltB64 = helloJson.optString("salt", "");
+                if (saltB64.length() < 4) {
+                    Log.w(TAG, "missing salt in hello message");
                     closeSocket();
                     break;
                 }
