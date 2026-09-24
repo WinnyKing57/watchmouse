@@ -112,7 +112,7 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
         synchronized (lock) {
             this.host = host == null ? "" : host.trim();
             this.port = port;
-            Log.i(TAG, "target set to " + this.host + ":" + this.port + " (enabled=" + enabled + ")");
+            Log.i(TAG, "target set to " + this.host + ":" + this.port);
             if (enabled) {
                 requestConnect();
             }
@@ -354,14 +354,18 @@ public final class NetDataSender implements MouseDataSender, KeyboardDataSender 
         }
     }
 
-    private void notifyStatus(boolean nowConnected) {
+    private void notifyStatus(final boolean nowConnected) {
         if (connected == nowConnected) {
             return;
         }
         connected = nowConnected;
-        for (StatusListener listener : statusListeners) {
-            listener.onConnectionChanged(nowConnected);
-        }
+        // The socket worker thread observes connect/disconnect events, so deliver the
+        // notification on the main thread to let listeners touch the UI safely.
+        mainThread.post(() -> {
+            for (StatusListener listener : statusListeners) {
+                listener.onConnectionChanged(nowConnected);
+            }
+        });
     }
 
     private static int asInt(boolean value) {

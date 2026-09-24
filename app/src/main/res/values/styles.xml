@@ -42,8 +42,10 @@
     </style>
 
     <!-- Theme applied after the splash screen. Carries the androidx.preference
-         theme definition required by the preference screens. -->
-    <style name="Theme.Watch" parent="@android:style/Theme.DeviceDefault">
+         theme definition required by the preference screens. Descends from
+         Theme.AppCompat so the preference dialogs (EditTextPreference, ...) can
+         show their AppCompatDialog. -->
+    <style name="Theme.Watch" parent="@style/Theme.AppCompat.NoActionBar">
         <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
         <item name="android:windowBackground">@android:color/black</item>
     </style>
