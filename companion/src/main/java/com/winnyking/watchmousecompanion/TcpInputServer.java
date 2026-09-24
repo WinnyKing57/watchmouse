@@ -46,10 +46,9 @@ public final class TcpInputServer {
     }
 
     private final InputTarget target;
-    private final StateListener stateListener;
+    private volatile StateListener stateListener;
     private final Set<Socket> clients = ConcurrentHashMap.newKeySet();
-    private final ScheduledExecutorService pinger =
-            Executors.newSingleThreadScheduledExecutor();
+    private ScheduledExecutorService pinger;
 
     private ServerSocket serverSocket;
     private Thread acceptThread;
@@ -57,6 +56,10 @@ public final class TcpInputServer {
 
     public TcpInputServer(InputTarget target, StateListener stateListener) {
         this.target = target;
+        this.stateListener = stateListener;
+    }
+
+    public void setStateListener(StateListener stateListener) {
         this.stateListener = stateListener;
     }
 
@@ -69,9 +72,10 @@ public final class TcpInputServer {
         acceptThread = new Thread(this::acceptLoop, "watchmouse-tcp-accept");
         acceptThread.setDaemon(true);
         acceptThread.start();
+        pinger = Executors.newSingleThreadScheduledExecutor();
         pinger.scheduleWithFixedDelay(
                 this::pingClients, PING_INTERVAL_MS, PING_INTERVAL_MS, TimeUnit.MILLISECONDS);
-        stateListener.onStateChanged("Listening on port " + getPort());
+        notifyState("Listening on port " + getPort());
     }
 
     public synchronized void stop() {
@@ -79,7 +83,10 @@ public final class TcpInputServer {
             return;
         }
         running = false;
-        pinger.shutdownNow();
+        if (pinger != null) {
+            pinger.shutdownNow();
+            pinger = null;
+        }
         if (serverSocket != null) {
             try {
                 serverSocket.close();
@@ -91,7 +98,7 @@ public final class TcpInputServer {
             closeQuietly(client);
         }
         clients.clear();
-        stateListener.onStateChanged("Stopped");
+        notifyState("Stopped");
     }
 
     public int getPort() {
@@ -217,7 +224,14 @@ public final class TcpInputServer {
     }
 
     private void updateState() {
-        stateListener.onStateChanged("Connected clients: " + clients.size());
+        notifyState("Connected clients: " + clients.size());
+    }
+
+    private void notifyState(String state) {
+        StateListener listener = stateListener;
+        if (listener != null) {
+            listener.onStateChanged(state);
+        }
     }
 
     private static void closeQuietly(Socket socket) {
